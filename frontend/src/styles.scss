@@ -1,1 +1,92 @@
-/* You can add global styles to this file, and also import other style files */
+@import "bootstrap/scss/bootstrap";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+:root {
+  --primary: #2c3e50;
+  --secondary: #34495e;
+  --accent: #3498db;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --light: #ecf0f1;
+  --dark: #2c3e50;
+  --sidebar-width: 260px;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8f9fa;
+  color: var(--dark);
+  margin: 0;
+}
+
+.main-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background-color: var(--primary);
+  color: white;
+  z-index: 1000;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+/* Card Improvements */
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: white;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-weight: 600;
+  padding: 1rem 1.25rem;
+  border-top-left-radius: 0.75rem !important;
+  border-top-right-radius: 0.75rem !important;
+}
+
+/* Status Badge Styles */
+.badge-status {
+  padding: 0.4em 0.8em;
+  border-radius: 50rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-pending { background-color: #ffe8cc; color: #d9480f; }
+.status-assigned { background-color: #e3fafc; color: #0c8599; }
+.status-in_transit { background-color: #e7f5ff; color: #1c7ed6; }
+.status-delivered { background-color: #ebfbee; color: #2b8a3e; }
+
+/* Responsive */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .content-wrapper {
+    margin-left: 0;
+  }
+}

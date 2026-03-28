@@ -1,0 +1,45 @@
+/* Timeline Dots Styling */
+.timeline-wrapper {
+  margin-top: 1.5rem;
+  padding-left: 0.5rem;
+
+  .timeline-item {
+    position: relative;
+    padding-left: 1.5rem;
+    padding-bottom: 2rem;
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      background-color: var(--accent);
+      border-radius: 50%;
+      position: absolute;
+      left: 0;
+      top: 5px;
+      z-index: 2;
+      box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 10px;
+      bottom: -10px;
+      width: 2px;
+      background-color: #e9ecef;
+      z-index: 1;
+    }
+
+    &:last-child::before {
+      display: none;
+    }
+  }
+}
+
+/* Map specific tweaks */
+#map {
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  z-index: 10;
+}

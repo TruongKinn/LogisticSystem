@@ -1,0 +1,78 @@
+<div class="mb-4 d-flex align-items-center">
+  <button class="btn btn-icon btn-light rounded-circle me-3" routerLink="/shipment">
+    <i class="bi bi-arrow-left"></i>
+  </button>
+  <h4 class="fw-bold mb-0">Chi tiết Vận Đơn: {{ shipment?.shipmentCode }}</h4>
+</div>
+
+<div class="row g-4" *ngIf="shipment">
+  <div class="col-12 col-xl-8">
+    <!-- Map Tracking UI -->
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+      <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-geo-alt me-2 text-danger"></i>Theo dõi Hành trình</span>
+        <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2">
+          Hệ thống vệ tinh: Đang kết nối
+        </span>
+      </div>
+      <div id="map" style="height: 450px; background-color: #f1f3f5;"></div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 bg-white">
+          <div class="card-body">
+            <h6 class="text-muted text-uppercase mb-4 fw-bold small">Thông tin Người Gửi</h6>
+            <p class="mb-1 fw-bold">{{ shipment.senderName }}</p>
+            <p class="mb-1"><i class="bi bi-telephone text-muted me-2"></i>{{ shipment.senderPhone }}</p>
+            <p class="text-muted"><i class="bi bi-geo text-muted me-2"></i>{{ shipment.senderAddress }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0 bg-white">
+          <div class="card-body">
+            <h6 class="text-muted text-uppercase mb-4 fw-bold small">Thông tin Người Nhận</h6>
+            <p class="mb-1 fw-bold">{{ shipment.receiverName }}</p>
+            <p class="mb-1"><i class="bi bi-telephone text-muted me-2"></i>{{ shipment.receiverPhone }}</p>
+            <p class="text-muted"><i class="bi bi-geo text-muted me-2"></i>{{ shipment.receiverAddress }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-4">
+    <!-- Status & Tracking Timeline -->
+    <div class="card h-100 shadow-sm border-0 bg-white overflow-hidden">
+      <div class="card-header bg-white py-3">Lịch sử Hành trình</div>
+      <div class="card-body">
+        <div class="text-center py-3 mb-4 bg-light rounded-3">
+          <p class="text-muted small mb-1">Trạng thái hiện tại</p>
+          <span [class]="'badge-status fs-5 ' + getStatusClass(shipment.status)">
+            {{ shipment.status }}
+          </span>
+        </div>
+
+        <div class="timeline-wrapper ms-3 mt-4">
+          <div *ngFor="let step of trackingHistory; let last = last" class="timeline-item position-relative ps-4 pb-4">
+            <div class="dot position-absolute top-0 start-0 translate-middle-x rounded-circle" 
+                 [style.background]="'#3b82f6'" style="width: 12px; height: 12px; z-index: 2;"></div>
+            <div *ngIf="!last" class="line position-absolute top-0 start-0 border-start translate-middle-x" 
+                 style="height: 100%; width: 2px; background-color: #e2e8f0; z-index: 1;"></div>
+            
+            <div class="d-flex flex-column">
+              <span class="fw-bold mb-1">{{ step.status }}</span>
+              <p class="text-muted small mb-1">{{ step.note }}</p>
+              <span class="text-muted smaller"><i class="bi bi-clock me-1"></i>{{ step.timestamp | date:'short' }}</span>
+            </div>
+          </div>
+          <div *ngIf="trackingHistory.length === 0" class="text-center py-4 text-muted small">
+            Chưa phát sinh dữ liệu hành trình vận chuyển.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+.sidebar {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+
+  hr {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-link {
+    transition: all 0.2s ease-in-out;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7) !important;
+
+    i {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff !important;
+      transform: translateX(4px);
+    }
+
+    &.active {
+      background: #3b82f6 !important;
+      color: #fff !important;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+      i {
+        opacity: 1;
+      }
+    }
+  }
+
+  .dropdown-toggle::after {
+    display: none;
+  }
+}
