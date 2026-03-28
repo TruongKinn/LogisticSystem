@@ -1,64 +1,87 @@
-# Logistics Microservice System
+# Logistics Microservice System (LogisticSystem)
 
-Dự án Logistics System được thiết kế theo kiến trúc **Microservices, Event-Driven Architecture (EDA)** nhằm quản lý vận đơn, tài xế, phương tiện và lịch sử hành trình.
+Dự án **LogisticSystem** được xây dựng dựa trên kiến trúc Microservices chuyên biệt cho quản lý vận tải, điều phối tài xế và theo dõi hành trình thời gian thực. Hệ thống tuân thủ các tiêu chuẩn phát triển của dự án mẫu `vn.agent`.
 
-## 🚀 Tính năng & Thành phần (Architecture)
+## 1. Tech Stack & Infrastructure
 
-Hệ thống bao gồm **7 Microservices (Backend)** và **1 Frontend Application**:
+- **Language**: Java 17 (Eclipse Temurin)
+- **Framework**: Spring Boot 3.3.3
+- **Build Tool**: Maven
+- **Containerization**: Docker, Docker Compose
+- **Databases**: 
+  - **PostgreSQL 15**: Lưu trữ dữ liệu quan hệ (Shipment, Driver, Vehicle, Notification).
+  - **MongoDB 6**: Lưu trữ dữ liệu phi cấu trúc và log hành trình (Tracking events).
+  - **Redis 6**: Rate limiting và caching tại Gateway.
+- **Messaging**: Apache Kafka + Zookeeper (Event-Driven Architecture).
+- **Monitoring**: Prometheus & Grafana.
+- **API Documentation**: OpenAPI (SpringDoc) 2.2.0.
 
-1. **`api-gateway` (Port: 4953)**: Điểm vào duy nhất (Entrypoint) cho Frontend, định tuyến qua Spring Cloud Gateway và rate limiting bằng Redis. Tổng hợp Swagger UI của tất cả service.
-2. **`logistics-service` (Port: 8093)**: Đóng vai trò là _Orchestrator_. Cung cấp endpoint tổng hợp (ví dụ: gán tài xế, phương tiện vào vận đơn) thông qua việc tái sử dụng `OpenFeign` gọi sang các service khác.
-3. **`shipment-service` (Port: 8094)**: Quản lý vòng đời vận đơn. Produce các Event (`logistics.shipment.created`, v.v.) lên Kafka. Sử dụng cấu hình PostgreSQL.
-4. **`driver-service` (Port: 8096)**: Quản lý thông tin tài xế và trạng thái hoạt động (AVAILABLE, BUSY,...). Lõi là PostgreSQL.
-5. **`vehicle-service` (Port: 8097)**: Quản lý các phương tiện giao hàng, thể tích, trọng lượng tối đa. Lõi là PostgreSQL.
-6. **`tracking-service` (Port: 8095)**: Lắng nghe Kafka Consumer (Event khi Shipment thay đổi trạng thái). Lưu trữ lịch sử di chuyển tốc độ cao, sử dụng MongoDB.
-7. **`notification-service` (Port: 8098)**: Lắng nghe Kafka Consumer để gửi Email/SMS tự động đến khách hàng hoặc Driver.
-8. **`frontend` (Port: 80)**: Giao diện Management Dashboard được xây dựng bằng Angular 17.
+## 2. Microservices Architecture
 
-## 🛠 Nền tảng Công nghệ (Tech Stack)
+| Service Name | Port | Database | Description |
+| :--- | :--- | :--- | :--- |
+| **api-gateway** | 4953 | Redis | Central entry point, Routing, Rate Limiting & Swagger Aggregation. |
+| **logistics-service** | 8093 | N/A | Orchestrator - Điều phối luồng nghiệp vụ giữa các service. |
+| **shipment-service** | 8094 | PostgreSQL | Quản lý vận đơn, trạng thái giao hàng và lộ trình. |
+| **tracking-service** | 8095 | MongoDB | Theo dõi lịch sử hành trình thời gian thực từ Kafka Events. |
+| **driver-service** | 8096 | PostgreSQL | Quản lý thông tin tài xế, bằng lái và trạng thái hoạt động. |
+| **vehicle-service** | 8097 | PostgreSQL | Quản lý đội xe, tải trọng, thể tích và gán tài xế. |
+| **notification-service**| 8098 | PostgreSQL | Xử lý gửi thông báo (Email/SMS) dựa trên sự kiện hệ thống. |
+| **frontend** | 80 | N/A | Angular 17 Management Dashboard. |
 
-- **Backend Framework**: Java 17, Spring Boot 3.3.3, Spring Data JPA, MongoDB, Spring Cloud OpenFeign
-- **Frontend**: Angular 17, SCSS
-- **Message Broker**: Apache Kafka, Zookeeper
-- **Databases**: PostgreSQL 15, MongoDB 6, Redis 6
-- **Monitoring**: Prometheus, Grafana
-- **DevOps**: Docker, Docker Compose, Jenkins CI
+## 3. Service Standard Structure
 
-## 📋 Hướng dẫn Khởi chạy (Get Started)
+Mỗi service trong hệ thống tuân thủ cấu trúc chuẩn:
 
-### 1. Build các Service (Backend + Frontend)
+```text
+vn.logistic.[service]
+├── [Service]Application.java  # Main Application
+├── common                     # Enum, Constants, Shared DTOs
+├── config                     # Kafka, JPA, Web configurations
+├── controller                 # REST Endpoints (mapped to /v3/api-docs)
+├── model                      # JPA Entities or Mongo Documents
+├── repository                 # Spring Data Interfaces
+└── service                    # Business Logic (Interface & Impl)
+```
 
-Bạn cần mở terminal ở từng thư mục ứng dụng Spring Boot và chạy Maven (Yêu cầu cài sẵn JDK 17 và Maven):
+## 4. Development Workflow & Rules
+
+### 4.1. Naming Conventions
+- **Group ID**: `vn.logistic`
+- **Artifact ID**: `[name]-service`
+- **Package Base**: `vn.logistic.[servicename]`
+- **Controllers**: `[Entity]Controller` với `@Tag` cho Swagger.
+
+### 4.2. Docker & CI/CD
+Mỗi service bao gồm:
+- **Dockerfile**: Sử dụng `eclipse-temurin:17-jdk-alpine`.
+- **Jenkinsfile**: Pipeline chuẩn bao gồm các bước Build (Maven) và Dockerize.
+
+### 4.3. Kafka Events
+Hệ thống sử dụng các topic chính:
+- `logistics.shipment.created`: Khi có vận đơn mới.
+- `logistics.shipment.status.updated`: Khi cập nhật trạng thái giao hàng (Kích hoạt Tracking/Notification).
+- `logistics.driver.assigned`: Khi tài xế được gán cho xe/vận đơn.
+
+## 5. How to Run
+
+### 1. Build Backend
+Chạy tạ mỗi thư mục service:
 ```bash
-# Ví dụ build API Gateway
-cd api-gateway
 mvn clean package -DskipTests
 ```
-Lặp lại thao tác này cho các folder: `logistics-service`, `shipment-service`, `driver-service`, `vehicle-service`, `tracking-service`, `notification-service`.
 
-Đối với Frontend (Yêu cầu Node.js >= 18):
+### 2. Build Frontend
 ```bash
-cd frontend
-npm install
-npm run build --prod
+cd frontend && npm install && npm run build --prod
 ```
 
-### 2. Khởi chạy toàn bộ bằng Docker Compose
-
-Dự án đã định nghĩa sẵn file `docker-compose.yml` gồm toàn bộ **Infrastructure (Redis, Postgres, Mongo, Kafka, Zookeeper, Prometheus, Grafana)** cùng **7 Services** và Frontend trên cùng mạng lưới network:
-
+### 3. Deploy with Docker Compose
 ```bash
 docker-compose up -d --build
 ```
 
-### 3. Thông tin Truy cập
-
-- **API Gateway Swagger**: `http://localhost:4953/webjars/swagger-ui/index.html` (chứa tài liệu gom của 5 services con).
-- **Trang Dashboard Admin (Angular)**: `http://localhost` (Port 80)
-- **Monitoring - Grafana**: `http://localhost:3000` (Tài khoản mặc định thường là `admin` / `password`)
-
-## 📌 Các bước tiếp theo
-
-1. Kết nối giao diện Angular với các bộ API (CRUD vận đơn, tài xế, phương tiện).
-2. Tích hợp JWT Authentication cho API Gateway (Keycloak / OAuth2).
-3. Triển khai phân phối log tập trung (ELK Stack).
+### 4. Access Points
+- **Swagger UI**: `http://localhost:4953/swagger-ui.html`
+- **Dashboard**: `http://localhost`
+- **Prometheus**: `http://localhost:9090`
