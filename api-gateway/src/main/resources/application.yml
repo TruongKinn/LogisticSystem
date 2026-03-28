@@ -1,0 +1,67 @@
+server:
+  port: 4953
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        # Route cho logistics-service (Orchestrator)
+        - id: logistics-service
+          uri: ${LOGISTICS_SERVICE_URI:http://localhost:8093}
+          predicates:
+            - Path=/logistics/**
+            
+        # Route cho shipment-service
+        - id: shipment-service
+          uri: ${SHIPMENT_SERVICE_URI:http://localhost:8094}
+          predicates:
+            - Path=/shipment/**
+            
+        # Route cho tracking-service
+        - id: tracking-service
+          uri: ${TRACKING_SERVICE_URI:http://localhost:8095}
+          predicates:
+            - Path=/tracking/**
+            
+        # Route cho driver-service
+        - id: driver-service
+          uri: ${DRIVER_SERVICE_URI:http://localhost:8096}
+          predicates:
+            - Path=/driver/**
+            
+        # Route cho vehicle-service
+        - id: vehicle-service
+          uri: ${VEHICLE_SERVICE_URI:http://localhost:8097}
+          predicates:
+            - Path=/vehicle/**
+            
+# OpenAPI Aggregation (Swagger)
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    urls:
+      - name: Driver Service
+        url: /driver/v3/api-docs
+      - name: Vehicle Service
+        url: /vehicle/v3/api-docs
+      - name: Shipment Service
+        url: /shipment/v3/api-docs
+      - name: Tracking Service
+        url: /tracking/v3/api-docs
+      - name: Logistics Orchestrator
+        url: /logistics/v3/api-docs

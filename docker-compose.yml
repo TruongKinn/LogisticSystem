@@ -1,0 +1,275 @@
+services:
+
+  # =========================================================================
+  # INFRASTRUCTURE
+  # =========================================================================
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis
+    hostname: redis
+    ports:
+      - '6379:6379'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB;FLUSHALL
+    networks:
+      - logistic-network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+      - ./initdb.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+    networks:
+      - logistic-network
+
+  mongo:
+    image: mongo:6-jammy
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - logistic-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - '22181:2181'
+    networks:
+      - logistic-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '29092:29092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - logistic-network
+
+  # =========================================================================
+  # MONITORING
+  # =========================================================================
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+    networks:
+      - logistic-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    ports:
+      - '3000:3000'
+    links:
+      - prometheus
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      - logistic-network
+
+  # =========================================================================
+  # MICROSERVICES
+  # =========================================================================
+
+  api-gateway:
+    deploy:
+      replicas: 1
+    image: truongtv1111/logistic-api-gateway:latest
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    environment:
+      ALLOWED_ORIGIN: http://localhost
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGISTICS_SERVICE_URI: http://logistics-service:8093
+      SHIPMENT_SERVICE_URI: http://shipment-service:8094
+      TRACKING_SERVICE_URI: http://tracking-service:8095
+      DRIVER_SERVICE_URI: http://driver-service:8096
+      VEHICLE_SERVICE_URI: http://vehicle-service:8097
+      NOTIFICATION_SERVICE_URI: http://notification-service:8098
+    ports:
+      - '4953:4953'
+    depends_on:
+      - redis
+    networks:
+      - logistic-network
+
+  logistics-service:
+    container_name: logistics-service
+    image: truongtv1111/logistic-logistics-service:latest
+    build:
+      context: ./logistics-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/shipment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      KAFKA_SERVER: kafka:29092
+      API_GATEWAY: http://api-gateway:4953
+      SHIPMENT_SERVICE_URL: http://shipment-service:8094
+      DRIVER_SERVICE_URL: http://driver-service:8096
+      VEHICLE_SERVICE_URL: http://vehicle-service:8097
+    ports:
+      - '8093:8093'
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - logistic-network
+
+  shipment-service:
+    container_name: shipment-service
+    image: truongtv1111/logistic-shipment-service:latest
+    build:
+      context: ./shipment-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/shipment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      KAFKA_SERVER: kafka:29092
+      API_GATEWAY: http://api-gateway:4953
+    ports:
+      - '8094:8094'
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - logistic-network
+
+  tracking-service:
+    container_name: tracking-service
+    image: truongtv1111/logistic-tracking-service:latest
+    build:
+      context: ./tracking-service
+      dockerfile: Dockerfile
+    environment:
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      KAFKA_SERVER: kafka:29092
+      API_GATEWAY: http://api-gateway:4953
+    ports:
+      - '8095:8095'
+    depends_on:
+      - mongo
+      - kafka
+    networks:
+      - logistic-network
+
+  driver-service:
+    container_name: driver-service
+    image: truongtv1111/logistic-driver-service:latest
+    build:
+      context: ./driver-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/driver_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      API_GATEWAY: http://api-gateway:4953
+    ports:
+      - '8096:8096'
+    depends_on:
+      - postgres
+    networks:
+      - logistic-network
+
+  vehicle-service:
+    container_name: vehicle-service
+    image: truongtv1111/logistic-vehicle-service:latest
+    build:
+      context: ./vehicle-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/vehicle_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      API_GATEWAY: http://api-gateway:4953
+    ports:
+      - '8097:8097'
+    depends_on:
+      - postgres
+    networks:
+      - logistic-network
+
+  notification-service:
+    container_name: notification-service
+    image: truongtv1111/logistic-notification-service:latest
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      KAFKA_SERVER: kafka:29092
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      API_GATEWAY: http://api-gateway:4953
+    ports:
+      - '8098:8098'
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - logistic-network
+
+  frontend:
+    container_name: frontend
+    image: truongtv1111/logistic-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    networks:
+      - logistic-network
+
+networks:
+  logistic-network:
+    external: false
+    name: logistic-network
+
+volumes:
+  postgres:
+  mongo_data:
+  grafana:
