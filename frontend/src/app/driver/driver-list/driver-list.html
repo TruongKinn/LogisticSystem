@@ -1,0 +1,89 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>TÀI XẾ & PHƯƠNG TIỆN</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Quản lý tài xế</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Quản lý Tài Xế</h1>
+            <p class="page-subtitle">Quản lý danh mục tài xế, kiểm tra thông tin liên lạc và trạng thái hoạt động</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button nz-button nzType="default">
+                <span nz-icon nzType="export"></span> Xuất Excel
+            </button>
+            <button nz-button nzType="primary" nzSize="large" style="border-radius: 8px;">
+                <span nz-icon nzType="plus"></span> Thêm mới tài xế
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-section border-0 mt-4">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <nz-input-group [nzSuffix]="suffixIconSearch" style="width: 320px;">
+                <input type="text" nz-input placeholder="Tìm kiếm tên hoặc SĐT..." [(ngModel)]="searchValue" (keydown.enter)="onSearch()" />
+            </nz-input-group>
+            <ng-template #suffixIconSearch>
+                <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
+            </ng-template>
+            <button nz-button nzType="default" (click)="onSearch()" class="ms-2">Tìm kiếm</button>
+        </div>
+    </div>
+
+    <div class="table-section border-0 mt-4">
+        <nz-table #basicTable [nzData]="drivers" [nzLoading]="loading" [nzFrontPagination]="false"
+            [nzShowPagination]="false" nzSize="middle" [nzScroll]="{ x: '1000px', y: 'calc(100vh - 400px)' }">
+            <thead>
+                <tr>
+                    <th nzWidth="80px">ID</th>
+                    <th>Tên tài xế</th>
+                    <th>Số điện thoại</th>
+                    <th>Giấy phép lái xe</th>
+                    <th nzWidth="150px">Trạng thái</th>
+                    <th nzWidth="120px" nzRight>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let data of basicTable.data">
+                    <td>{{ data.id || data.driverId }}</td>
+                    <td>
+                        <a><b>{{ data.fullName || data.name }}</b></a>
+                    </td>
+                    <td>{{ data.phone || data.phoneNumber }}</td>
+                    <td>{{ data.licenseNo || data.licenseNumber || 'N/A' }}</td>
+                    <td>
+                        <nz-tag [nzColor]="getStatusColor(data.status)">
+                            <i nz-icon [nzType]="getStatusIcon(data.status)" class="me-1"></i>
+                            {{ data.status }}
+                        </nz-tag>
+                    </td>
+                    <td nzRight>
+                        <div class="action-buttons">
+                            <a nz-tooltip nzTooltipTitle="Chi tiết">
+                                <span nz-icon nzType="eye" nzTheme="outline"></span>
+                            </a>
+                            <nz-divider nzType="vertical"></nz-divider>
+                            <a nz-tooltip nzTooltipTitle="Chỉnh sửa">
+                                <span nz-icon nzType="edit" nzTheme="outline"></span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </nz-table>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <span class="total-text">
+                Hiển thị <b>{{ drivers.length > 0 ? currentPage * pageSize + 1 : 0 }}</b> - <b>{{ (currentPage + 1) * pageSize > totalElements ? totalElements : (currentPage + 1) * pageSize }}</b> trong tổng số <b>{{ totalElements }}</b> kết quả
+            </span>
+            <nz-pagination [nzPageIndex]="currentPage + 1" [nzTotal]="totalElements" [nzPageSize]="pageSize"
+                [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50, 100]"
+                (nzPageIndexChange)="onPageChange($event)" (nzPageSizeChange)="onPageSizeChange($event)">
+            </nz-pagination>
+        </div>
+    </div>
+</div>

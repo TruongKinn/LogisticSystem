@@ -1,0 +1,238 @@
+.dashboard-container {
+    padding: 24px;
+    background-color: #f0f2f5;
+    min-height: 100vh;
+}
+
+.breadcrumb {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.page-header {
+    margin-bottom: 24px;
+    padding: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-subtitle {
+    margin: 8px 0 0;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.last-updated {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+}
+
+.last-updated span[nz-icon] {
+    font-size: 16px;
+}
+
+.stats-cards {
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card ::ng-deep .ant-statistic-title {
+    font-size: 14px;
+    color: #8c8c8c;
+    margin-bottom: 8px;
+}
+
+.stat-card ::ng-deep .ant-statistic-content {
+    font-size: 28px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.stat-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #8c8c8c;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1890ff;
+}
+
+.charts-row {
+    margin-bottom: 24px;
+}
+
+.chart-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: none;
+    height: 100%;
+}
+
+.chart-card ::ng-deep .ant-card-head {
+    background: linear-gradient(to right, #f6f8fb, #ffffff);
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-card ::ng-deep .ant-card-head-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.chart-container {
+    height: 350px;
+    padding: 16px;
+    position: relative;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 8px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+    border-radius: 8px;
+    border-left: 4px solid #1890ff;
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-label {
+    font-size: 13px;
+    color: #8c8c8c;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #262626;
+}
+
+.info-value.active {
+    color: #52c41a;
+}
+
+.info-value.processing {
+    color: #1890ff;
+}
+
+.info-value.pending {
+    color: #faad14;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 16px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .last-updated {
+        order: -1;
+        width: 100%;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+    }
+
+    .chart-container {
+        height: 280px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Loading spinner customization */
+::ng-deep .ant-spin-container {
+    min-height: 400px;
+}
+
+::ng-deep .ant-spin-blur {
+    opacity: 0.3;
+}

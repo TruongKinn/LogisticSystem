@@ -1,0 +1,40 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>ĐỊNH VỊ - THEO DÕI</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hành trình & Tracking</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Hành trình Vận Đơn</h1>
+            <p class="page-subtitle">Nhập mã vận đơn (VD: SHIP-1234) để xem lịch sử hành trình chi tiết</p>
+        </div>
+    </div>
+
+    <div class="filter-section border-0 mt-4" style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
+        <h2 style="margin-bottom: 24px;">Tra cứu hành trình</h2>
+        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <nz-input-group [nzSuffix]="suffixIconSearch" nzSize="large" style="width: 100%;">
+                <input type="text" nz-input placeholder="Vui lòng nhập mã vận đơn..." [(ngModel)]="searchCode" (keydown.enter)="onSearch()" />
+            </nz-input-group>
+            <ng-template #suffixIconSearch>
+                <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
+            </ng-template>
+            <button nz-button nzType="primary" nzSize="large" (click)="onSearch()" [nzLoading]="loading">Tra cứu</button>
+        </div>
+    </div>
+
+    <div class="tracking-section border-0 mt-4" *ngIf="trackingHistory.length > 0">
+        <h3 style="margin-bottom: 24px; font-weight: bold;">Chi tiết quá trình vận chuyển: {{ searchCode }}</h3>
+        <nz-timeline>
+            <nz-timeline-item *ngFor="let history of trackingHistory" [nzColor]="getColorForStatus(history.status)">
+                <p style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">{{ history.status }} - {{ history.location }}</p>
+                <p *ngIf="history.note" style="color: #666; margin-bottom: 4px;">Ghi chú: {{ history.note }}</p>
+                <p class="tracking-time">{{ history.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+            </nz-timeline-item>
+        </nz-timeline>
+    </div>
+</div>

@@ -1,0 +1,101 @@
+<div class="form-container">
+    <h3 class="section-title">Profile Information</h3>
+
+    <div class="avatar-section" *ngIf="isEditMode">
+        <div class="avatar-display">
+            <nz-avatar [nzSize]="80" [nzSrc]="avatarUrl" [nzIcon]="'user'"
+                style="border: 2px solid #f0f0f0"></nz-avatar>
+        </div>
+        <div class="avatar-upload">
+            <nz-upload [nzCustomRequest]="handleUpload" [nzShowUploadList]="false">
+                <button nz-button nzType="default" class="btn-upload">
+                    <span nz-icon nzType="upload"></span>
+                    Change Photo
+                </button>
+            </nz-upload>
+            <p class="upload-hint">JPG or PNG. Max size of 1MB.</p>
+        </div>
+    </div>
+
+    <form nz-form [formGroup]="form" (ngSubmit)="submitForm()" nzLayout="vertical">
+        <div class="form-grid">
+            <!-- Row 1 -->
+            <nz-form-item>
+                <nz-form-label nzRequired>First Name</nz-form-label>
+                <nz-form-control nzErrorTip="Please input first name!">
+                    <input nz-input formControlName="firstName" placeholder="First Name" />
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+                <nz-form-label nzRequired>Last Name</nz-form-label>
+                <nz-form-control nzErrorTip="Please input last name!">
+                    <input nz-input formControlName="lastName" placeholder="Last Name" />
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+                <nz-form-label nzRequired>Date of Birth</nz-form-label>
+                <nz-form-control nzErrorTip="Please select birth date!">
+                    <nz-date-picker formControlName="dateOfBirth" style="width: 100%"></nz-date-picker>
+                </nz-form-control>
+            </nz-form-item>
+
+            <!-- Row 2 -->
+            <nz-form-item>
+                <nz-form-label nzRequired>Gender</nz-form-label>
+                <nz-form-control nzErrorTip="Please select gender!">
+                    <nz-select formControlName="gender" placeholder="Select Gender">
+                        <nz-option *ngFor="let g of genders" [nzValue]="g" [nzLabel]="g"></nz-option>
+                    </nz-select>
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+                <nz-form-label nzRequired>User Type</nz-form-label>
+                <nz-form-control nzErrorTip="Please select user type!">
+                    <nz-select formControlName="type" placeholder="Select User Type">
+                        <nz-option *ngFor="let t of userTypes" [nzValue]="t" [nzLabel]="t"></nz-option>
+                    </nz-select>
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+                <nz-form-label nzRequired>Phone</nz-form-label>
+                <nz-form-control nzErrorTip="Please input phone number!">
+                    <input nz-input formControlName="phone" placeholder="Telephone Number" />
+                </nz-form-control>
+            </nz-form-item>
+
+            <!-- Row 3 -->
+            <nz-form-item>
+                <nz-form-label nzRequired>Email ID</nz-form-label>
+                <nz-form-control nzErrorTip="Please input valid email!">
+                    <input nz-input formControlName="email" placeholder="Email ID" />
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+                <nz-form-label nzRequired>Username</nz-form-label>
+                <nz-form-control nzErrorTip="Please input username!">
+                    <input nz-input formControlName="username" placeholder="Username"
+                        [attr.disabled]="isEditMode ? '' : null" />
+                </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item *ngIf="!isEditMode">
+                <nz-form-label nzRequired>Password</nz-form-label>
+                <nz-form-control nzErrorTip="Please input password!">
+                    <input nz-input type="password" formControlName="password" placeholder="Password" />
+                </nz-form-control>
+            </nz-form-item>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="closeModal()">CANCEL</button>
+            <button type="submit" class="btn-submit" [nzLoading]="isLoading" nz-button>
+                CONTINUE <span nz-icon nzType="arrow-right"></span>
+            </button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,252 @@
+<nz-layout class="app-layout" *ngIf="showLayout; else authLayout">
+  <nz-sider class="menu-sidebar" nzCollapsible nzWidth="256px" nzBreakpoint="md" [(nzCollapsed)]="isCollapsed"
+    [nzTrigger]="null">
+    <div class="sidebar-logo">
+      <a href="https://ng.ant.design/" target="_blank">
+        <img src="https://ng.ant.design/assets/img/logo.svg" alt="logo">
+        <h1>AI AGENT</h1>
+      </a>
+    </div>
+    <ul nz-menu [nzTheme]="isDarkMode ? 'dark' : 'light'" nzMode="inline" [nzInlineCollapsed]="isCollapsed">
+      <!-- TỔNG QUAN -->
+      <li nz-submenu nzTitle="TỔNG QUAN" nzIcon="dashboard" [class.ant-menu-submenu-selected]="dashboard.isActive">
+        <ul>
+          <li nz-menu-item routerLinkActive="ant-menu-item-selected" [routerLinkActiveOptions]="{ exact: true }"
+            #dashboard="routerLinkActive">
+            <a routerLink="/">
+              <span>Dashboard</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- QUẢN LÝ VẬN ĐƠN -->
+      <li nz-submenu nzTitle="QUẢN LÝ VẬN ĐƠN" nzIcon="shopping-cart">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/shipments">
+              <span nz-icon nzType="inbox"></span>
+              <span>Danh sách vận đơn</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- TÀI XẾ & PHƯƠNG TIỆN -->
+      <li nz-submenu nzTitle="TÀI XẾ & PHƯƠNG TIỆN" nzIcon="car">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/drivers">
+              <span nz-icon nzType="user"></span>
+              <span>Quản lý tài xế</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/vehicles">
+              <span nz-icon nzType="car"></span>
+              <span>Danh sách xe</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- ĐỊNH VỊ - THEO DÕI -->
+      <li nz-submenu nzTitle="ĐỊNH VỊ - THEO DÕI" nzIcon="environment">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/tracking">
+              <span nz-icon nzType="compass"></span>
+              <span>Hành trình & Tracking</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <li nz-submenu nzTitle="HỆ THỐNG" nzIcon="setting">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/crypto">
+              <span nz-icon nzType="lock"></span>
+              <span>Encryption</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/vault">
+              <span nz-icon nzType="safety-certificate"></span>
+              <span>Vault Management</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/2fa-setup">
+              <span nz-icon nzType="lock"></span>
+              <span>Thiết lập 2FA</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/mail-test">
+              <span nz-icon nzType="mail"></span>
+              <span>Mail Queue Manager</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/user">
+              <span nz-icon nzType="user"></span>
+              <span>Quản lý tài khoản</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/orchestrator">
+              <span nz-icon nzType="deployment-unit"></span>
+              <span>Quản lý Saga</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/excel-io">
+              <span nz-icon nzType="file-excel"></span>
+              <span>Import/Export Excel</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/file-extraction">
+              <span nz-icon nzType="scan"></span>
+              <span>Trích xuất Text (OCR)</span>
+            </a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/rate-limit-tester">
+              <span nz-icon nzType="thunderbolt"></span>
+              <span>Rate Limit Tester</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+
+
+      <!-- THÔNG BÁO -->
+      <li nz-submenu nzTitle="QUẢN LÝ THÔNG BÁO" nzIcon="bell">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/notification">
+              <span nz-icon nzType="notification"></span>
+              <span>Lịch sử thông báo</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <!-- AI ASSISTANT -->
+      <li nz-submenu nzTitle="AI ASSISTANT" nzIcon="robot">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="/ai-assistant">
+              <span nz-icon nzType="message"></span>
+              <span>Hỏi đáp AI</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-footer" nz-popover [nzPopoverContent]="logoutTemplate" nzPopoverPlacement="rightBottom"
+      nzPopoverTrigger="hover" [class.collapsed]="isCollapsed">
+      <div class="sidebar-avatar-wrapper">
+        <nz-avatar [nzSrc]="avatarUrl" [nzText]="userInitials" [nzSize]="40" class="profile-avatar"></nz-avatar>
+        <div class="status-indicator"></div>
+      </div>
+      <div class="sidebar-footer-info" *ngIf="!isCollapsed">
+        <div class="sidebar-footer-name">{{ username }}</div>
+        <div class="sidebar-footer-role">Quản trị viên</div>
+      </div>
+    </div>
+
+    <ng-template #logoutTemplate>
+      <div class="logout-popover-content">
+        <div class="popover-user-info">
+          <strong>{{ username }}</strong>
+          <span>{{ username }}@admin.com</span>
+        </div>
+        <nz-divider style="margin: 8px 0;"></nz-divider>
+        <div class="logout-action" (click)="logout()">
+          <span nz-icon nzType="logout"></span>
+          <span>Đăng xuất</span>
+        </div>
+      </div>
+    </ng-template>
+    <div class="sidebar-toggle" (click)="isCollapsed = !isCollapsed">
+      <span nz-icon [nzType]="isCollapsed ? 'right' : 'left'"></span>
+    </div>
+  </nz-sider>
+  <nz-layout>
+    <nz-header>
+      <div class="app-header">
+        <div></div> <!-- Spacer for flex -->
+        <div class="header-user">
+          <span nz-icon [nzType]="isDarkMode ? 'moon' : 'sun'" [style.color]="isDarkMode ? '#ffc107' : '#555'"
+            style="font-size: 20px; margin-right: 24px; cursor: pointer;" (click)="toggleTheme()" nz-tooltip
+            nzTooltipTitle="Đổi giao diện"></span>
+
+          <!-- 🔔 Notification Bell với Badge + Dropdown real-time -->
+          <ng-template #notifContent>
+            <div style="width: 320px; max-height: 400px; overflow-y: auto;">
+              <div *ngIf="(notifications$ | async)?.length === 0"
+                style="text-align: center; padding: 24px; color: #999;">
+                <span nz-icon nzType="bell" style="font-size: 32px;"></span>
+                <p style="margin-top: 8px;">Chưa có thông báo mới</p>
+              </div>
+              <nz-list nzSize="small">
+                <nz-list-item *ngFor="let item of (notifications$ | async) || []" (click)="markAsRead(item)"
+                  [style.background-color]="item.isRead ? 'transparent' : '#e6f7ff'"
+                  style="border-bottom: 1px solid #f0f0f0; padding: 12px 16px; cursor: pointer;">
+                  <div style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <strong [style.color]="item.isRead ? '#555' : '#000'">{{ item.title }} <nz-badge
+                          *ngIf="!item.isRead" nzStatus="processing"></nz-badge></strong>
+                      <nz-tag [nzColor]="getTypeColor(item.type)" style="font-size: 10px;">{{ item.type }}</nz-tag>
+                    </div>
+                    <div class="notification-message-clamp" nz-tooltip [nzTooltipTitle]="item.message"
+                      nzTooltipPlacement="bottom">
+                      {{ item.message }}
+                    </div>
+                  </div>
+                </nz-list-item>
+              </nz-list>
+              <div
+                style="text-align: center; padding: 8px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+                <a (click)="sendTestWsNotification()" style="color: #52c41a; font-size: 13px;">Gửi Test WS</a>
+                <a (click)="markAllAsRead()" style="color: #1890ff; font-size: 13px;">Đánh dấu tất cả</a>
+                <a routerLink="/notification" (click)="isNotifPopoverVisible = false" style="font-size: 13px;">Xem tất
+                  cả →</a>
+              </div>
+            </div>
+          </ng-template>
+
+          <nz-badge [nzCount]="(unreadCount$ | async) || 0" [nzOverflowCount]="99"
+            style="margin-right: 24px; cursor: pointer;">
+            <span nz-icon nzType="bell" nz-popover [nzPopoverContent]="notifContent" nzPopoverTitle="🔔 Thông báo"
+              nzPopoverPlacement="bottomRight" nzPopoverTrigger="click" [(nzPopoverVisible)]="isNotifPopoverVisible"
+              (nzPopoverVisibleChange)="onPopoverVisibleChange($event)" style="font-size: 20px;"></span>
+          </nz-badge>
+
+          <nz-avatar [nzSrc]="avatarUrl" [nzText]="userInitials" [nzSize]="32" [nzIcon]="'user'"
+            style="margin-right: 8px; vertical-align: middle;" [style.background-color]="'#87d068'">
+          </nz-avatar>
+
+          <span nz-typography>Hello, <strong>{{ username }}</strong></span>
+        </div>
+      </div>
+    </nz-header>
+    <nz-content>
+      <div class="inner-content">
+        <router-outlet></router-outlet>
+      </div>
+    </nz-content>
+  </nz-layout>
+  <div class="floating-action-button" routerLink="/ai-assistant">
+    <span nz-icon nzType="robot"></span>
+  </div>
+</nz-layout>
+
+<ng-template #authLayout>
+  <div class="auth-wrapper">
+    <router-outlet></router-outlet>
+  </div>
+</ng-template>

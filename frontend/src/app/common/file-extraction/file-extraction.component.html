@@ -1,0 +1,51 @@
+<div class="page-container">
+    <!-- 1. Breadcrumb -->
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item><a routerLink="/"><span nz-icon nzType="home"></span></a></nz-breadcrumb-item>
+        <nz-breadcrumb-item>HỆ THỐNG</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Trích xuất Text (OCR)</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <!-- 2. Header & Actions -->
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Trích Xuất Văn Bản Tự Động (OCR)</h1>
+            <p class="page-subtitle">Công cụ sử dụng công nghệ OCR Tesseract để bóc tách chữ từ tài liệu cứng (JPG, PNG,
+                PDF)</p>
+        </div>
+        <div>
+            <!-- Các nút hành động chính, hiện không cần buttons rời -->
+        </div>
+    </div>
+
+    <!-- 4. Content Section -->
+    <div class="table-section" style="padding: 24px;">
+        <nz-alert nzType="info" nzMessage="Cơ Chế Hoạt Động Của Thuật Toán"
+            nzDescription="Nếu tải PDF lên, hệ thống sẽ thực thi luồng Fast Extract. Nếu tải hình hoá đơn/tài liệu scan, hệ thống sẽ gửi luồng qua AI Pipeline Engine OCR để phân tích mạng nơron sâu."
+            nzShowIcon style="margin-bottom: 24px;"></nz-alert>
+
+        <h3 style="margin-bottom: 8px;">Tệp Phân Tích (Input)</h3>
+        <p style="color: #666; margin-bottom: 16px;">Kéo và thả tài liệu vào khung để tự động bắt đầu xử lý.</p>
+
+        <nz-upload nzType="drag" [nzMultiple]="false" [nzShowUploadList]="false" [nzBeforeUpload]="beforeUpload"
+            style="margin-bottom: 24px; display: block;">
+            <p class="ant-upload-drag-icon">
+                <span nz-icon nzType="scan" style="font-size: 48px; color: #1890ff;"></span>
+            </p>
+            <p class="ant-upload-text">Thả tệp Hình ảnh (.jpg, .png) hoặc (.pdf) vào đây</p>
+            <p class="ant-upload-hint">
+                <span nz-icon nzType="safety"></span> Đảm bảo an toàn không lưu trữ tệp tin trên máy chủ
+            </p>
+        </nz-upload>
+
+        <div *ngIf="extractedText" style="margin-top: 32px;">
+            <nz-divider nzText="Kết Quả Bóc Tách (Output)"></nz-divider>
+            <p style="color: #8c8c8c; font-weight: 500; font-size: 13px;">Tệp được trích xuất: <span
+                    style="color: #1890ff;">{{ uploadedFileName }}</span></p>
+
+            <div
+                style="background-color: #fafafa; border: 1px solid #d9d9d9; border-radius: 6px; padding: 24px; min-height: 300px; font-family: 'Courier New', Courier, monospace; font-size: 15px; color: #262626; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;">
+                {{ extractedText }}</div>
+        </div>
+    </div>
+</div>

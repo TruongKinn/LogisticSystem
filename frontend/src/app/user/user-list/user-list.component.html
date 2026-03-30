@@ -1,0 +1,186 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Quản lý tài khoản</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Quản lý tài khoản</h1>
+            <p class="page-subtitle">Quản lý danh sách người dùng và phân quyền hệ thống</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button nz-button nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click"
+                [(nzVisible)]="isColumnDropdownVisible">
+                <span nz-icon nzType="setting"></span> Tùy chỉnh cột
+            </button>
+            <nz-dropdown-menu #menu="nzDropdownMenu">
+                <div class="setup-container">
+                    <!-- Header Tabs -->
+                    <div class="setup-tabs">
+                        <div class="tab" [class.active]="activeConfigTab === 'custom'"
+                            (click)="activeConfigTab = 'custom'">Custom setup</div>
+                        <div class="tab" [class.active]="activeConfigTab === 'default'"
+                            (click)="activeConfigTab = 'default'">Default setup</div>
+                    </div>
+
+                    <!-- Content Body -->
+                    <div class="setup-body">
+                        <!-- Custom Tab Content -->
+                        <ng-container *ngIf="activeConfigTab === 'custom'">
+                            <!-- Search -->
+                            <div class="setup-search">
+                                <nz-input-group [nzSuffix]="suffixIconSearchDropdown">
+                                    <input type="text" nz-input placeholder="Search" [(ngModel)]="columnSearchValue" />
+                                </nz-input-group>
+                                <ng-template #suffixIconSearchDropdown>
+                                    <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
+                                </ng-template>
+                            </div>
+
+                            <!-- Column List Header -->
+                            <div class="list-header">
+                                <span class="header-left">Columns</span>
+                                <span class="header-right">Tooltips</span>
+                            </div>
+
+                            <!-- List Scrollable Area -->
+                            <div class="list-area">
+                                <div *ngFor="let col of filteredColumns" class="list-item">
+                                    <div class="item-left">
+                                        <span nz-icon nzType="drag" class="drag-handle"></span>
+                                        <label nz-checkbox [(ngModel)]="col.visible"></label>
+                                        <span class="col-name">{{ col.name }}</span>
+                                    </div>
+                                    <div class="item-right">
+                                        <label nz-checkbox [(ngModel)]="col.showTooltip"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </ng-container>
+
+                        <!-- Default Tab Content -->
+                        <ng-container *ngIf="activeConfigTab === 'default'">
+                            <div class="default-setup-preview">
+                                <div class="preview-info">
+                                    <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                                    <p>Hệ thống sẽ khôi phục về cấu hình mặc định ban đầu.</p>
+                                </div>
+                                <button nz-button nzType="dashed" nzBlock (click)="applyDefaultSetup()">
+                                    Áp dụng cấu hình mặc định
+                                </button>
+                            </div>
+                        </ng-container>
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="setup-footer">
+                        <button nz-button nzType="primary" nzSize="small" (click)="saveSettings()">Save</button>
+                        <button nz-button nzType="default" nzSize="small" (click)="resetColumns()">Restore
+                            defaults</button>
+                        <button nz-button nzType="default" nzSize="small" (click)="closeDropdown()">Cancel</button>
+                    </div>
+                </div>
+            </nz-dropdown-menu>
+            <button nz-button nzType="primary" (click)="openModal()">
+                <span nz-icon nzType="plus"></span> Thêm mới
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-group">
+            <nz-input-group [nzSuffix]="suffixIconSearch" style="width: 320px;">
+                <input type="text" nz-input placeholder="Tìm kiếm Username, Email, Số điện thoại..."
+                    [(ngModel)]="searchValue" (keydown.enter)="onSearch()" />
+            </nz-input-group>
+            <ng-template #suffixIconSearch>
+                <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
+            </ng-template>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <nz-table #basicTable [nzData]="users" [nzFrontPagination]="false" [nzLoading]="loading"
+            [nzShowPagination]="false" (nzQueryParams)="onQueryParamsChange($event)" nzSize="middle"
+            [nzScroll]="{ x: '1400px', y: 'calc(100vh - 450px)' }">
+            <thead>
+                <tr>
+                    <th *ngIf="isColumnVisible('username')" nzColumnKey="username" [nzSortFn]="true">Username</th>
+                    <th *ngIf="isColumnVisible('email')" nzColumnKey="email" [nzSortFn]="true">Email</th>
+                    <th *ngIf="isColumnVisible('firstName')" nzColumnKey="firstName" [nzSortFn]="true">Họ</th>
+                    <th *ngIf="isColumnVisible('lastName')" nzColumnKey="lastName" [nzSortFn]="true">Tên</th>
+                    <th *ngIf="isColumnVisible('phone')" nzColumnKey="phone" [nzSortFn]="true">Số điện thoại</th>
+                    <th *ngIf="isColumnVisible('gender')" nzColumnKey="gender" [nzSortFn]="true">Giới tính</th>
+                    <th *ngIf="isColumnVisible('dateOfBirth')" nzColumnKey="dateOfBirth" [nzSortFn]="true">Ngày sinh
+                    </th>
+                    <th *ngIf="isColumnVisible('action')" nzWidth="120px" nzRight>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let data of basicTable.data">
+                    <td *ngIf="isColumnVisible('username')" class="user-name"
+                        [nzTooltipTitle]="isTooltipEnabled('username') ? data.username : null" nz-tooltip>
+                        <a (click)="openModal(data.id)">{{ data.username }}</a>
+                    </td>
+                    <td *ngIf="isColumnVisible('email')"
+                        [nzTooltipTitle]="isTooltipEnabled('email') ? data.email : null" nz-tooltip>
+                        {{ data.email }}
+                    </td>
+                    <td *ngIf="isColumnVisible('firstName')"
+                        [nzTooltipTitle]="isTooltipEnabled('firstName') ? data.firstName : null" nz-tooltip>
+                        {{ data.firstName }}
+                    </td>
+                    <td *ngIf="isColumnVisible('lastName')"
+                        [nzTooltipTitle]="isTooltipEnabled('lastName') ? data.lastName : null" nz-tooltip>
+                        {{ data.lastName }}
+                    </td>
+                    <td *ngIf="isColumnVisible('phone')"
+                        [nzTooltipTitle]="isTooltipEnabled('phone') ? data.phone : null" nz-tooltip>
+                        {{ data.phone }}
+                    </td>
+                    <td *ngIf="isColumnVisible('gender')"
+                        [nzTooltipTitle]="isTooltipEnabled('gender') ? (data.gender === Gender.MALE ? 'Nam' : (data.gender === Gender.FEMALE ? 'Nữ' : 'Khác')) : null"
+                        nz-tooltip>
+                        <nz-tag
+                            [nzColor]="data.gender === Gender.MALE ? 'blue' : (data.gender === Gender.FEMALE ? 'magenta' : 'default')">
+                            {{ data.gender === Gender.MALE ? 'Nam' : (data.gender === Gender.FEMALE ? 'Nữ' : 'Khác')
+                            }}
+                        </nz-tag>
+                    </td>
+                    <td *ngIf="isColumnVisible('dateOfBirth')"
+                        [nzTooltipTitle]="isTooltipEnabled('dateOfBirth') ? (data.dateOfBirth | date:'dd/MM/yyyy') : null"
+                        nz-tooltip>
+                        {{ data.dateOfBirth | date:'dd/MM/yyyy' }}
+                    </td>
+                    <td *ngIf="isColumnVisible('action')" nzRight>
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <a (click)="openModal(data.id)" class="action-btn edit" nz-tooltip
+                                nzTooltipTitle="Chỉnh sửa">
+                                <span nz-icon nzType="edit" nzTheme="outline"></span>
+                            </a>
+                            <a (click)="deleteUser(data.id)" class="action-btn delete" nz-tooltip
+                                nzTooltipTitle="Xoá người dùng">
+                                <span nz-icon nzType="delete" nzTheme="outline"></span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </nz-table>
+
+        <div class="table-footer">
+            <span class="total-text">
+                Hiển thị <b>{{ pageIndex * pageSize + 1 }}</b> - <b>{{ (pageIndex + 1) * pageSize > total ? total :
+                    (pageIndex + 1) * pageSize }}</b> trong tổng số <b>{{ total }}</b> kết quả
+            </span>
+            <nz-pagination [nzPageIndex]="pageIndex + 1" [nzTotal]="total" [nzPageSize]="pageSize"
+                [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50, 100]"
+                (nzPageIndexChange)="onPageIndexChange($event)" (nzPageSizeChange)="onPageSizeChange($event)">
+            </nz-pagination>
+        </div>
+    </div>
+</div>

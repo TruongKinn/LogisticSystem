@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     gateway:
       globalcors:
@@ -18,11 +22,23 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
       routes:
+        # Route cho authentication-service
+        - id: authentication-service
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/auth/**
+            
         # Route cho logistics-service (Orchestrator)
         - id: logistics-service
           uri: ${LOGISTICS_SERVICE_URI:http://localhost:8093}
           predicates:
             - Path=/logistics/**
+
+        # Route cho frontend orchestrator page
+        - id: orchestrator-service
+          uri: ${LOGISTICS_SERVICE_URI:http://localhost:8093}
+          predicates:
+            - Path=/orchestrator/**
             
         # Route cho shipment-service
         - id: shipment-service
@@ -47,6 +63,18 @@ spring:
           uri: ${VEHICLE_SERVICE_URI:http://localhost:8097}
           predicates:
             - Path=/vehicle/**
+
+        # Route cho notification REST APIs
+        - id: notification-service-http
+          uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8098}
+          predicates:
+            - Path=/notification/api/**
+
+        # Route cho notification WebSocket/SockJS endpoint
+        - id: notification-service-ws
+          uri: ws://localhost:8098
+          predicates:
+            - Path=/notification/ws/**
             
 # OpenAPI Aggregation (Swagger)
 springdoc:
@@ -65,3 +93,6 @@ springdoc:
         url: /tracking/v3/api-docs
       - name: Logistics Orchestrator
         url: /logistics/v3/api-docs
+      - name: Authentication Service
+        url: /auth/v3/api-docs
+

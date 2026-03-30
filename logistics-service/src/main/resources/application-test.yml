@@ -1,0 +1,37 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  devtools:
+    add-properties: false
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/shipment_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:password}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+
+service:
+  shipment:
+    url: ${SHIPMENT_SERVICE_URL:http://localhost:8094}
+  driver:
+    url: ${DRIVER_SERVICE_URL:http://localhost:8096}
+  vehicle:
+    url: ${VEHICLE_SERVICE_URL:http://localhost:8097}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+openapi:
+  service:
+    api-docs: logistics-service
+    server: ${API_GATEWAY:http://localhost:4953}/logistics
+    title: Logistics Orchestrator service
+    version: 1.0.0

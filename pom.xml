@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>vn.agent.logistic</groupId>
+    <artifactId>logistic-system-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>logistic-system-parent</name>
+    <description>Parent POM for Logistic System Microservices</description>
+
+    <modules>
+        <module>api-gateway</module>
+        <module>authentication-service</module>
+        <module>driver-service</module>
+        <module>logistics-service</module>
+        <module>notification-service</module>
+        <module>shipment-service</module>
+        <module>tracking-service</module>
+        <module>vehicle-service</module>
+    </modules>
+
+</project>
+

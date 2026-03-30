@@ -1,0 +1,67 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 24px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>
+            <a routerLink="/shipments">Danh sách vận đơn</a>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Chi tiết: {{ shipmentCode }}</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div class="title-container">
+            <h1 class="page-title">Mã vận đơn: {{ shipmentCode }}</h1>
+            <nz-tag *ngIf="shipmentDetails" [nzColor]="getStatusColor(shipmentDetails?.status)" style="font-size: 14px; padding: 4px 12px; height: 32px; display: flex; align-items: center; border-radius: 6px;">
+                {{ shipmentDetails?.status }}
+            </nz-tag>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button nz-button nzType="default" routerLink="/shipments">
+                <span nz-icon nzType="arrow-left"></span> Quay lại
+            </button>
+            <button nz-button nzType="primary" style="border-radius: 8px;">
+                <span nz-icon nzType="edit"></span> Cập nhật trạng thái
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="loading" style="text-align: center; padding: 50px;">
+        <i nz-icon nzType="loading" style="font-size: 40px; color: var(--primary-color);"></i>
+        <p style="margin-top: 16px; color: #888;">Đang tải thông tin vận đơn...</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error && !loading" style="text-align: center; padding: 50px;">
+        <nz-card class="detail-card">
+            <i nz-icon nzType="close-circle" style="font-size: 48px; color: #ff4d4f;"></i>
+            <h2 style="margin-top: 16px; margin-bottom: 0;">Không tìm thấy thông tin vận đơn</h2>
+            <p style="color: #888;">Quý khách vui lòng kiểm tra lại mã vận đơn.</p>
+        </nz-card>
+    </div>
+
+    <!-- Content state -->
+    <div *ngIf="shipmentDetails && !loading && !error">
+        <nz-card class="detail-card" [nzBordered]="false">
+            <nz-descriptions nzTitle="Thông tin người gửi & người nhận" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }">
+                <nz-descriptions-item nzTitle="Người Gửi">{{ shipmentDetails?.senderName }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Người Nhận">{{ shipmentDetails?.receiverName }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="SĐT Người Gửi">{{ shipmentDetails?.senderPhone || 'N/A' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="SĐT Người Nhận">{{ shipmentDetails?.receiverPhone || 'N/A' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Địa Chỉ Gửi">{{ shipmentDetails?.senderAddress || 'N/A' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Địa Chỉ Nhận">{{ shipmentDetails?.receiverAddress || 'N/A' }}</nz-descriptions-item>
+            </nz-descriptions>
+        </nz-card>
+
+        <nz-card class="detail-card" [nzBordered]="false" style="margin-top: 24px;">
+            <nz-descriptions nzTitle="Thông tin đơn hàng" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
+                <nz-descriptions-item nzTitle="Mã Vận Đơn">{{ shipmentDetails?.shipmentCode }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Trọng lượng (kg)">{{ shipmentDetails?.weight || 0 }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Ngày tạo">
+                    {{ (shipmentDetails?.createdAt | date:'dd/MM/yyyy HH:mm:ss') || 'N/A' }}
+                </nz-descriptions-item>
+            </nz-descriptions>
+        </nz-card>
+    </div>
+</div>

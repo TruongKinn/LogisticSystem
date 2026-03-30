@@ -1,0 +1,111 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Xác thực 2 lớp</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Xác thực 2 lớp</h1>
+            <p class="page-subtitle">Thiết lập và quản lý bảo mật 2 lớp cho tài khoản của bạn</p>
+        </div>
+    </div>
+
+    <nz-card [nzBordered]="false" class="table-card">
+        <nz-spin [nzSpinning]="isLoading">
+            <!-- Case: 2FA is already enabled -->
+            <div *ngIf="is2faEnabled && !isLoading" class="state-container enabled-state">
+                <div class="status-badge success">
+                    <span nz-icon nzType="shield" nzTheme="fill"></span>
+                </div>
+                <div class="instruction-text">
+                    <h3>2FA đang hoạt động</h3>
+                    <p>Tài khoản của bạn đã được bảo vệ tối đa. Bạn sẽ cần mã OTP khi đăng nhập từ thiết bị lạ.</p>
+                </div>
+                <button nz-button nzType="default" nzDanger (click)="disable2fa()" class="action-btn disable-btn">
+                    <span nz-icon nzType="stop"></span> Tắt xác thực 2 bước
+                </button>
+            </div>
+
+            <!-- Case: Setting up 2FA -->
+            <div *ngIf="!is2faEnabled && !isLoading" class="state-container setup-state">
+
+                <div class="setup-grid" *ngIf="step === 'verify'">
+                    <!-- Left Column: Knowledge & QR -->
+                    <div class="grid-column-left">
+                        <div class="step-indicator">
+                            <span class="step-num">1</span>
+                            <div class="step-info">
+                                <h4>Quét mã QR</h4>
+                                <p>Dùng Google Authenticator quét mã sau:</p>
+                            </div>
+                        </div>
+
+                        <div class="qr-wrapper" *ngIf="qrCodeUrl">
+                            <img [src]="qrCodeUrl" alt="QR Code" class="qr-image" />
+                        </div>
+
+                        <div class="secret-display">
+                            <span class="label">Mã bí mật:</span>
+                            <code class="code-text">{{ secret }}</code>
+                        </div>
+
+                        <div class="security-tip">
+                            <nz-alert nzType="info" nzMessage="Bảo mật"
+                                nzDescription="Đừng chia sẻ mã này cho bất kỳ ai." nzShowIcon></nz-alert>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Verification -->
+                    <div class="grid-column-right">
+                        <div class="step-indicator">
+                            <span class="step-num">2</span>
+                            <div class="step-info">
+                                <h4>Xác thực OTP</h4>
+                                <p>Nhập mã 6 số từ ứng dụng:</p>
+                            </div>
+                        </div>
+
+                        <div class="otp-verification-box">
+                            <form nz-form [formGroup]="setupForm" (ngSubmit)="verifyOtp()" class="otp-form">
+                                <nz-form-item>
+                                    <nz-form-control nzErrorTip="Mã OTP phải có 6 chữ số!">
+                                        <nz-input-group nzSize="large">
+                                            <input nz-input formControlName="otp" placeholder="000 000" maxlength="6"
+                                                class="otp-input-field" />
+                                        </nz-input-group>
+                                    </nz-form-control>
+                                </nz-form-item>
+
+                                <button nz-button nzType="primary" nzSize="large" nzBlock [disabled]="!setupForm.valid"
+                                    class="action-btn verify-btn">
+                                    Kích hoạt 2FA
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="help-text">
+                            <p><span nz-icon nzType="question-circle"></span> Bạn gặp khó khăn? <a
+                                    (click)="showInstruction()">Xem hướng dẫn</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nz-spin>
+    </nz-card>
+
+    <!-- PDF Instruction Modal -->
+    <nz-modal [(nzVisible)]="isVisibleGuide" nzTitle="Hướng dẫn thiết lập 2FA" [nzFooter]="null"
+        (nzOnCancel)="handleCancelGuide()" [nzWidth]="'90%'" [nzCentered]="false"
+        [nzStyle]="{ top: '20px', height: '92vh' }" [nzBodyStyle]="{ padding: '0', height: 'calc(92vh - 55px)' }">
+        <ng-container *nzModalContent>
+            <div class="pdf-container" style="height: 100%;">
+                <iframe *ngIf="instructionUrl" [src]="instructionUrl" width="100%" height="100%" frameborder="0"
+                    class="pdf-view"></iframe>
+            </div>
+        </ng-container>
+    </nz-modal>
+</div>

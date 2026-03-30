@@ -1,0 +1,92 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Quản lý thông báo</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Quản lý thông báo</h1>
+            <p class="page-subtitle">Theo dõi lịch sử gửi thông báo và gửi thông báo mới cho khách hàng</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button nz-button nzType="default" (click)="loadData()" [nzLoading]="loading">
+                <span nz-icon nzType="reload"></span> Làm mới
+            </button>
+            <button nz-button nzType="primary" (click)='showModal()'>
+                <span nz-icon nzType="send"></span> Gửi thông báo mới
+            </button>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <nz-table #notificationTable [nzData]="notifications" [nzLoading]="loading" nzSize="middle"
+            [nzScroll]="{ x: '1000px', y: 'calc(100vh - 450px)' }" [nzShowPagination]="false"
+            [nzFrontPagination]="false">
+            <thead>
+                <tr>
+                    <th nzWidth="80px">ID</th>
+                    <th>Nội dung thông báo</th>
+                    <th nzWidth="200px">Người nhận (PlayerID/Token)</th>
+                    <th nzWidth="120px">Nhà cung cấp</th>
+                    <th nzWidth="120px">Trạng thái</th>
+                    <th nzWidth="180px">Ngày gửi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let data of notificationTable.data">
+                    <td>{{ data.id }}</td>
+                    <td>{{ data.message }}</td>
+                    <td><code>{{ data.recipientId }}</code></td>
+                    <td>
+                        <nz-tag [nzColor]="getProviderTag(data.provider)">
+                            {{ data.provider }}
+                        </nz-tag>
+                    </td>
+                    <td>
+                        <nz-tag [nzColor]="getStatusColor(data.status)">
+                            {{ data.status }}
+                        </nz-tag>
+                    </td>
+                    <td>{{ data.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                </tr>
+            </tbody>
+        </nz-table>
+
+        <div class="table-footer" *ngIf="total > 0">
+            <span class="total-text">
+                Hiển thị <b>{{ (pageIndex - 1) * pageSize + 1 }}</b> - <b>{{ Math.min(pageIndex * pageSize,
+                    total) }}</b> trong tổng số <b>{{ total }}</b> kết quả
+            </span>
+            <nz-pagination [(nzPageIndex)]="pageIndex" [nzTotal]="total" [(nzPageSize)]="pageSize"
+                (nzPageIndexChange)="onPageIndexChange($event)" (nzPageSizeChange)="onPageSizeChange($event)"
+                [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50, 100]">
+            </nz-pagination>
+        </div>
+    </div>
+</div>
+
+<nz-modal [(nzVisible)]="isModalVisible" nzTitle="Gửi thông báo mới" (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()"
+    [nzOkLoading]="isSending">
+    <ng-container *nzModalContent>
+        <form nz-form [formGroup]="validateForm">
+            <nz-form-item>
+                <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired>Nội dung</nz-form-label>
+                <nz-form-control [nzSm]="18" [nzXs]="24" nzErrorTip="Vui lòng nhập nội dung thông báo">
+                    <textarea nz-input formControlName="message" placeholder="Nhập nội dung thông báo..."
+                        [nzAutosize]="{ minRows: 3, maxRows: 6 }"></textarea>
+                </nz-form-control>
+            </nz-form-item>
+            <nz-form-item>
+                <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired>Player ID</nz-form-label>
+                <nz-form-control [nzSm]="18" [nzXs]="24" nzErrorTip="Vui lòng nhập ID người nhận">
+                    <input nz-input formControlName="playerId"
+                        placeholder="Nhập OneSignal Player ID hoặc Device Token..." />
+                </nz-form-control>
+            </nz-form-item>
+        </form>
+    </ng-container>
+</nz-modal>

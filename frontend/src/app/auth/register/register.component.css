@@ -1,0 +1,218 @@
+.auth-wrapper {
+    min-height: 100vh;
+    width: 100%;
+    background: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    /* Add padding top/bottom for scrolling space */
+    box-sizing: border-box;
+    overflow-y: auto;
+    /* Proper scroll on wrapper */
+}
+
+.auth-container {
+    display: flex;
+    width: 550px;
+    /* Even smaller width */
+    max-width: 95%;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+    /* Height follows content */
+    align-self: flex-start;
+    /* Start from top to allow scrolling */
+    position: relative;
+}
+
+/* Left Decorative Side (Condensed) */
+.auth-side-brand {
+    flex: 0.7;
+    /* Make it smaller than the form side */
+    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 15px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-side-brand::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -150px;
+    width: 250px;
+    height: 180%;
+    background: #fff;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.brand-content {
+    position: relative;
+    z-index: 10;
+}
+
+.ghost-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.logo-icon {
+    font-size: 20px;
+    color: #4c51bf;
+    background: #fff;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.logo-text {
+    font-size: 15px;
+    font-weight: 850;
+    margin: 0;
+    letter-spacing: -0.5px;
+    color: #2d3748;
+}
+
+.brand-description {
+    font-size: 10px;
+    line-height: 1.3;
+    margin-bottom: 12px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.get-started-btn {
+    height: 28px;
+    padding: 0 12px;
+    font-weight: 700;
+    font-size: 9px;
+    border-radius: 10px;
+    border: 1.5px solid #48bb78;
+    color: #48bb78;
+    background: transparent;
+}
+
+/* Form Side (Micro) */
+.auth-side-form {
+    flex: 1.2;
+    padding: 15px 25px;
+    background: #fff;
+    z-index: 5;
+    position: relative;
+}
+
+.form-header {
+    margin-bottom: 10px;
+}
+
+.form-header h1 {
+    font-size: 18px;
+    font-weight: 850;
+    margin-bottom: 2px;
+    color: #1a202c;
+}
+
+.form-header p {
+    color: #718096;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+/* Micro Form styles */
+.name-row {
+    display: flex;
+    gap: 10px;
+}
+
+::ng-deep .ant-form-item {
+    margin-bottom: 8px !important;
+}
+
+::ng-deep .ant-form-item-label {
+    padding-bottom: 2px !important;
+}
+
+::ng-deep .ant-form-item-label>label {
+    font-weight: 700 !important;
+    color: #2d3748 !important;
+    font-size: 9px !important;
+}
+
+::ng-deep .ant-input-affix-wrapper-lg {
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    border: none !important;
+    border-bottom: 1px solid #edf2f7 !important;
+    background: transparent !important;
+    font-size: 11px !important;
+}
+
+.submit-btn {
+    height: 32px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    margin-top: 5px;
+    margin-bottom: 8px;
+}
+
+.social-login p {
+    font-size: 10px;
+    margin-bottom: 10px;
+    color: #a0aec0;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.social-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #edf2f7;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.auth-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #718096;
+}
+
+.auth-footer a {
+    color: #667eea;
+    font-weight: 800;
+}
+
+/* Animations */
+.animated {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

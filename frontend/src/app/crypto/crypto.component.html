@@ -1,0 +1,99 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Mã hóa & Bảo mật</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Mã hóa dữ liệu</h1>
+            <p class="page-subtitle">Mã hóa và giải mã dữ liệu an toàn với các thuật toán hiện đại</p>
+        </div>
+    </div>
+
+    <nz-card [nzBordered]="false" class="crypto-card">
+        <nz-tabset>
+            <nz-tab nzTitle="Encrypt">
+                <ng-container *ngTemplateOutlet="cryptoForm; context: {mode: 'encrypt'}"></ng-container>
+            </nz-tab>
+            <nz-tab nzTitle="Decrypt">
+                <ng-container *ngTemplateOutlet="cryptoForm; context: {mode: 'decrypt'}"></ng-container>
+            </nz-tab>
+        </nz-tabset>
+    </nz-card>
+</div>
+
+
+<ng-template #cryptoForm let-mode="mode">
+    <div class="controls">
+        <nz-form-item style="margin-bottom: 0; min-width: 200px;">
+            <nz-form-label>Algorithm</nz-form-label>
+            <nz-form-control>
+                <nz-select [(ngModel)]="selectedAlgo" name="algo">
+                    <nz-option nzValue="GCM" nzLabel="AES-GCM (256-bit)"></nz-option>
+                    <nz-option nzValue="MD5" nzLabel="MD5 Hash" *ngIf="mode === 'encrypt'"></nz-option>
+                    <nz-option nzValue="SHA256" nzLabel="SHA-256 Hash" *ngIf="mode === 'encrypt'"></nz-option>
+                    <nz-option nzValue="BASE64" nzLabel="Base64 Encoding"></nz-option>
+                    <nz-option nzValue="RSA"
+                        [nzLabel]="mode === 'encrypt' ? 'RSA Public Key Encrypt' : 'RSA Remote Decrypt'"></nz-option>
+                </nz-select>
+            </nz-form-control>
+        </nz-form-item>
+
+
+        <nz-form-item style="margin-bottom: 0; flex: 1;" *ngIf="secretRequired">
+            <nz-form-label>Secret Key</nz-form-label>
+            <nz-form-control>
+                <nz-input-group [nzSuffix]="suffixTemplate">
+                    <input [type]="passwordVisible ? 'text' : 'password'" nz-input placeholder="Enter secure password"
+                        [(ngModel)]="secretKey" name="secret" />
+                </nz-input-group>
+                <ng-template #suffixTemplate>
+                    <span nz-icon [nzType]="passwordVisible ? 'eye-invisible' : 'eye'"
+                        (click)="passwordVisible = !passwordVisible"></span>
+                </ng-template>
+            </nz-form-control>
+        </nz-form-item>
+    </div>
+
+    <div class="io-container">
+        <div class="input-section">
+            <h4 nz-typography>Input</h4>
+            <textarea nz-input [(ngModel)]="input" placeholder="Enter text here..."
+                [nzAutosize]="{ minRows: 6, maxRows: 12 }"></textarea>
+
+            <button nz-button [nzType]="'primary'" [nzLoading]="isLoading" class="action-btn"
+                (click)="mode === 'encrypt' ? encrypt() : decrypt()">
+                <span nz-icon [nzType]="mode === 'encrypt' ? 'lock' : 'unlock'"></span>
+                {{ mode === 'encrypt' ? 'Encrypt' : 'Decrypt' }}
+            </button>
+
+            <button nz-button nzType="default" [nzLoading]="isLoading" class="action-btn" style="margin-top: 8px;"
+                (click)="fetchPublicKey()" *ngIf="mode === 'encrypt'">
+                <span nz-icon nzType="key"></span>
+                Get Default Public Key
+            </button>
+
+            <button nz-button nzType="default" [nzLoading]="isLoading" class="action-btn" style="margin-top: 8px;"
+                (click)="fillDefaultAlias()" *ngIf="mode === 'decrypt' && selectedAlgo === 'RSA'">
+                <span nz-icon nzType="tag"></span>
+                Use Default Alias
+            </button>
+        </div>
+
+        <div class="output-section">
+            <h4 nz-typography>Output</h4>
+            <nz-input-group [nzSuffix]="copyIcon">
+                <textarea nz-input [value]="output" readonly placeholder="Result will appear here..."
+                    [nzAutosize]="{ minRows: 6, maxRows: 12 }"></textarea>
+            </nz-input-group>
+            <ng-template #copyIcon>
+                <span nz-icon nzType="copy" style="cursor: pointer;" (click)="copyToClipboard()" nz-tooltip
+                    nzTooltipTitle="Copy"></span>
+            </ng-template>
+        </div>
+    </div>
+</ng-template>

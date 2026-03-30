@@ -1,0 +1,124 @@
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <!-- Decorative Left Side (Same as Login for consistency) -->
+        <div class="auth-side-brand">
+            <div class="brand-content">
+                <div class="ghost-logo">
+                    <span nz-icon nzType="smile" nzTheme="outline" class="logo-icon"></span>
+                    <h2 class="logo-text">AI Agent</h2>
+                </div>
+                <p class="brand-description">
+                    Tham gia cộng đồng AI Agent lớn nhất. Khám phá sức mạnh của trí tuệ nhân tạo thế hệ mới ngay hôm
+                    nay.
+                </p>
+                <button nz-button nzType="default" nzShape="round" class="get-started-btn">
+                    TÌM HIỂU THÊM
+                </button>
+            </div>
+            <div class="brand-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+            </div>
+        </div>
+
+        <!-- Register Form Side -->
+        <div class="auth-side-form">
+            <div class="theme-toggle" (click)="toggleTheme()">
+                <span nz-icon [nzType]="isDarkMode ? 'sun' : 'moon'"></span>
+            </div>
+
+            <div class="form-header">
+                <h1>Đăng ký</h1>
+                <p>Tạo tài khoản miễn phí. Chỉ tốn chưa đầy một phút.</p>
+            </div>
+
+            <form nz-form nzLayout="vertical" [formGroup]="registerForm" (ngSubmit)="submitForm()"
+                class="register-form">
+                <div class="name-row">
+                    <nz-form-item class="name-item">
+                        <nz-form-label [nzNoColon]="true">Họ</nz-form-label>
+                        <nz-form-control nzErrorTip="Vui lòng nhập họ!">
+                            <nz-input-group nzSize="large" [nzPrefix]="userIcon1">
+                                <input nz-input formControlName="firstName" placeholder="Họ" />
+                            </nz-input-group>
+                            <ng-template #userIcon1><span nz-icon nzType="user"></span></ng-template>
+                        </nz-form-control>
+                    </nz-form-item>
+                    <nz-form-item class="name-item">
+                        <nz-form-label [nzNoColon]="true">Tên</nz-form-label>
+                        <nz-form-control nzErrorTip="Vui lòng nhập tên!">
+                            <nz-input-group nzSize="large" [nzPrefix]="userIcon2">
+                                <input nz-input formControlName="lastName" placeholder="Tên" />
+                            </nz-input-group>
+                            <ng-template #userIcon2><span nz-icon nzType="user"></span></ng-template>
+                        </nz-form-control>
+                    </nz-form-item>
+                </div>
+
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Tên đăng nhập</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập tên đăng nhập!">
+                        <nz-input-group nzSize="large" [nzPrefix]="usernameIcon">
+                            <input nz-input formControlName="username" placeholder="username" />
+                        </nz-input-group>
+                        <ng-template #usernameIcon><span nz-icon nzType="solution"></span></ng-template>
+                    </nz-form-control>
+                </nz-form-item>
+
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Email</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập Email hợp lệ!">
+                        <nz-input-group nzSize="large" [nzPrefix]="mailIcon">
+                            <input nz-input formControlName="email" placeholder="email@example.com" />
+                        </nz-input-group>
+                        <ng-template #mailIcon><span nz-icon nzType="mail"></span></ng-template>
+                    </nz-form-control>
+                </nz-form-item>
+
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Mật khẩu</nz-form-label>
+                    <nz-form-control nzErrorTip="Mật khẩu tối thiểu 6 ký tự!">
+                        <nz-input-group nzSize="large" [nzPrefix]="lockIcon">
+                            <input [type]="passwordVisible ? 'text' : 'password'" nz-input formControlName="password"
+                                placeholder="••••••••" />
+                        </nz-input-group>
+                        <ng-template #lockIcon><span nz-icon nzType="lock"></span></ng-template>
+                    </nz-form-control>
+                </nz-form-item>
+
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Xác nhận mật khẩu</nz-form-label>
+                    <nz-form-control nzErrorTip="Mật khẩu xác nhận không khớp!">
+                        <nz-input-group nzSize="large" [nzPrefix]="lockCheckIcon">
+                            <input [type]="passwordVisible ? 'text' : 'password'" nz-input
+                                formControlName="confirmPassword" placeholder="••••••••" />
+                        </nz-input-group>
+                        <ng-template #lockCheckIcon><span nz-icon nzType="safety-certificate"></span></ng-template>
+                    </nz-form-control>
+                </nz-form-item>
+
+                <nz-form-item class="terms-item">
+                    <label nz-checkbox id="terms_check">Tôi chấp nhận Điều khoản sử dụng và Chính sách bảo mật</label>
+                </nz-form-item>
+
+                <button nz-button nzType="primary" nzSize="large" nzBlock class="submit-btn"
+                    [disabled]="!registerForm.valid">
+                    ĐĂNG KÝ
+                </button>
+
+                <div class="social-login">
+                    <p>Hoặc đăng ký với</p>
+                    <div class="social-icons">
+                        <button type="button" class="social-btn"><span nz-icon nzType="google"></span></button>
+                        <button type="button" class="social-btn"><span nz-icon nzType="facebook"></span></button>
+                        <button type="button" class="social-btn"><span nz-icon nzType="twitter"></span></button>
+                    </div>
+                </div>
+
+                <div class="auth-footer">
+                    Bạn đã có tài khoản? <a routerLink="/login">Đăng nhập ngay</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

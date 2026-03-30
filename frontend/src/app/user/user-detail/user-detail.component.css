@@ -1,0 +1,153 @@
+.form-container {
+    padding: 0 12px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 16px;
+    /* Reduced from 24px */
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 24px;
+    /* Reduced row-gap to 12px */
+}
+
+/* Remove default margin from form items inside grid to rely on grid gap */
+:host ::ng-deep .form-grid nz-form-item {
+    margin-bottom: 0;
+}
+
+/* Responsive: 1 column on small screens */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: 8px;
+    /* Antd handles spacing, but we might need minute adjustments */
+}
+
+/* Custom styling for labels to match design (bold, asterisk color) */
+:host ::ng-deep .ant-form-item-label>label {
+    font-weight: 500;
+    color: #444;
+}
+
+:host ::ng-deep .ant-form-item-label>label.ant-form-item-required:before {
+    color: #ff4d4f;
+    /* Red asterisk */
+}
+
+/* Input styling */
+/* Input styling */
+:host ::ng-deep .ant-input,
+:host ::ng-deep .ant-picker {
+    border-radius: 6px;
+    padding: 8px 11px;
+    border-color: #d9d9d9;
+    height: 40px;
+}
+
+:host ::ng-deep .ant-select-selector {
+    border-radius: 6px !important;
+    padding: 0 11px !important;
+    border-color: #d9d9d9 !important;
+    height: 40px !important;
+    display: flex;
+    align-items: center;
+}
+
+:host ::ng-deep .ant-input:focus,
+:host ::ng-deep .ant-picker-focused,
+:host ::ng-deep .ant-select-focused .ant-select-selector {
+    border-color: #52c41a;
+    /* Green focus to match "Continue" button vibe if desired, or keep blue */
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+}
+
+/* Modal Footer Actions - Custom implementation in HTML */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    /* Reduced from 32px */
+    padding-top: 16px;
+    /* Reduced from 24px */
+    border-top: 1px solid #f0f0f0;
+}
+
+.btn-cancel {
+    background-color: #aeb5bc;
+    /* Grayish */
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    height: auto;
+    text-transform: uppercase;
+}
+
+.btn-cancel:hover {
+    background-color: #9ea4aa;
+    color: white;
+}
+
+.btn-submit {
+    background-color: #52c41a;
+    /* Green */
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    height: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+}
+
+.btn-submit:hover {
+    background-color: #46a61b;
+    color: white;
+}
+
+.avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+.avatar-display {
+    flex-shrink: 0;
+}
+
+.avatar-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-upload {
+    border-radius: 6px;
+    height: 36px;
+}
+
+.upload-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #8c8c8c;
+}

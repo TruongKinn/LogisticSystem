@@ -1,3 +1,5 @@
+name: logistic-system
+
 services:
 
   # =========================================================================
@@ -6,7 +8,7 @@ services:
 
   redis:
     image: redis:6.2-alpine
-    container_name: redis
+    container_name: logistic-redis
     hostname: redis
     ports:
       - '6379:6379'
@@ -14,11 +16,11 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
       - REDIS_DISABLE_COMMANDS=FLUSHDB;FLUSHALL
     networks:
-      - logistic-network
+      - logistic-system-network
 
   postgres:
     image: postgres:15
-    container_name: postgres
+    container_name: logistic-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -30,34 +32,32 @@ services:
     ports:
       - '5432:5432'
     networks:
-      - logistic-network
+      - logistic-system-network
 
   mongo:
     image: mongo:6-jammy
-    container_name: mongodb
+    container_name: logistic-mongodb
     ports:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
     networks:
-      - logistic-network
+      - logistic-system-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
+    container_name: logistic-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - '22181:2181'
     networks:
-      - logistic-network
+      - logistic-system-network
 
   kafka:
     image: confluentinc/cp-kafka:latest
-    container_name: kafka
-    depends_on:
-      - zookeeper
+    container_name: logistic-kafka
     ports:
       - '29092:29092'
     environment:
@@ -67,8 +67,41 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
     networks:
-      - logistic-network
+      - logistic-system-network
+
+  vault:
+    image: hashicorp/vault:1.13.3
+    container_name: logistic-vault
+    ports:
+      - '8200:8200'
+    environment:
+      VAULT_ADDR: 'http://0.0.0.0:8200'
+      VAULT_DEV_ROOT_TOKEN_ID: 'root'
+      VAULT_DEV_LISTEN_ADDRESS: '0.0.0.0:8200'
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - logistic-system-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: logistic-keycloak
+    command: start-dev
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    networks:
+      - logistic-system-network
 
   # =========================================================================
   # MONITORING
@@ -76,7 +109,7 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    container_name: logistic-prometheus
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -85,11 +118,11 @@ services:
     ports:
       - '9090:9090'
     networks:
-      - logistic-network
+      - logistic-system-network
 
   grafana:
     image: grafana/grafana
-    container_name: grafana
+    container_name: logistic-grafana
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=grafana
@@ -101,11 +134,31 @@ services:
     volumes:
       - grafana:/var/lib/grafana
     networks:
-      - logistic-network
+      - logistic-system-network
 
   # =========================================================================
   # MICROSERVICES
   # =========================================================================
+
+  authentication-service:
+    container_name: logistic-authentication-service
+    image: truongtv1111/logistic-authentication-service:latest
+    build:
+      context: ./authentication-service
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '8081:8081'
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - logistic-system-network
 
   api-gateway:
     deploy:
@@ -118,6 +171,8 @@ services:
       ALLOWED_ORIGIN: http://localhost
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      DEFAULT_URI: http://authentication-service:8081
+      AUTH_SERVICE_URI: http://authentication-service:8081
       LOGISTICS_SERVICE_URI: http://logistics-service:8093
       SHIPMENT_SERVICE_URI: http://shipment-service:8094
       TRACKING_SERVICE_URI: http://tracking-service:8095
@@ -129,10 +184,10 @@ services:
     depends_on:
       - redis
     networks:
-      - logistic-network
+      - logistic-system-network
 
   logistics-service:
-    container_name: logistics-service
+    container_name: logistic-logistics-service
     image: truongtv1111/logistic-logistics-service:latest
     build:
       context: ./logistics-service
@@ -152,10 +207,10 @@ services:
       - postgres
       - kafka
     networks:
-      - logistic-network
+      - logistic-system-network
 
   shipment-service:
-    container_name: shipment-service
+    container_name: logistic-shipment-service
     image: truongtv1111/logistic-shipment-service:latest
     build:
       context: ./shipment-service
@@ -172,16 +227,16 @@ services:
       - postgres
       - kafka
     networks:
-      - logistic-network
+      - logistic-system-network
 
   tracking-service:
-    container_name: tracking-service
+    container_name: logistic-tracking-service
     image: truongtv1111/logistic-tracking-service:latest
     build:
       context: ./tracking-service
       dockerfile: Dockerfile
     environment:
-      MONGODB_HOST: mongodb
+      MONGODB_HOST: mongo
       MONGODB_PORT: 27017
       KAFKA_SERVER: kafka:29092
       API_GATEWAY: http://api-gateway:4953
@@ -191,10 +246,10 @@ services:
       - mongo
       - kafka
     networks:
-      - logistic-network
+      - logistic-system-network
 
   driver-service:
-    container_name: driver-service
+    container_name: logistic-driver-service
     image: truongtv1111/logistic-driver-service:latest
     build:
       context: ./driver-service
@@ -209,10 +264,10 @@ services:
     depends_on:
       - postgres
     networks:
-      - logistic-network
+      - logistic-system-network
 
   vehicle-service:
-    container_name: vehicle-service
+    container_name: logistic-vehicle-service
     image: truongtv1111/logistic-vehicle-service:latest
     build:
       context: ./vehicle-service
@@ -227,10 +282,10 @@ services:
     depends_on:
       - postgres
     networks:
-      - logistic-network
+      - logistic-system-network
 
   notification-service:
-    container_name: notification-service
+    container_name: logistic-notification-service
     image: truongtv1111/logistic-notification-service:latest
     build:
       context: ./notification-service
@@ -251,10 +306,10 @@ services:
       - postgres
       - kafka
     networks:
-      - logistic-network
+      - logistic-system-network
 
   frontend:
-    container_name: frontend
+    container_name: logistic-frontend
     image: truongtv1111/logistic-frontend:latest
     build:
       context: ./frontend
@@ -262,12 +317,12 @@ services:
     ports:
       - '80:80'
     networks:
-      - logistic-network
+      - logistic-system-network
 
 networks:
-  logistic-network:
+  logistic-system-network:
     external: false
-    name: logistic-network
+    name: logistic-system-network
 
 volumes:
   postgres:

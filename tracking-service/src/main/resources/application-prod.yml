@@ -1,0 +1,34 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  devtools:
+    add-properties: false
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DB:tracking_db}
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER:localhost:29092}
+    consumer:
+      group-id: tracking-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    topic:
+      shipment-status-updated: logistics.shipment.status.updated
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+openapi:
+  service:
+    api-docs: tracking-service
+    server: ${API_GATEWAY:http://localhost:4953}/tracking
+    title: Tracking service
+    version: 1.0.0

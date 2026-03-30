@@ -1,0 +1,59 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { API_CONFIG } from '../constants/api.constant';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LogisticService {
+
+  private baseUrl = API_CONFIG.GATEWAY_URL;
+
+  constructor(private http: HttpClient) { }
+
+  // Shipment APIs
+  getShipments(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/shipment`);
+  }
+
+  getShipmentByCode(code: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/shipment/code/${code}`);
+  }
+
+  createShipment(shipment: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/shipment`, shipment);
+  }
+
+  updateShipmentStatus(id: number, status: string, note?: string): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/shipment/${id}/status`, { status, note });
+  }
+
+  // Driver APIs
+  getDrivers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/driver`);
+  }
+
+  updateDriverStatus(id: number, status: string): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/driver/${id}/status?status=${status}`, {});
+  }
+
+  // Vehicle APIs
+  getVehicles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/vehicle`);
+  }
+
+  // Logistics Orchestrator API
+  assignDelivery(shipmentCode: string, driverId: number, vehicleId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/logistics/assign?shipmentCode=${shipmentCode}&driverId=${driverId}&vehicleId=${vehicleId}`, {});
+  }
+
+  getFullDeliveryInfo(shipmentCode: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/logistics/info/${shipmentCode}`);
+  }
+
+  // Tracking API
+  getTrackingHistory(shipmentCode: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/tracking/shipment/${shipmentCode}/history`);
+  }
+}

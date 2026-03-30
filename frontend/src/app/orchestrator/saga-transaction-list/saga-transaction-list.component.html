@@ -1,0 +1,78 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Orchestrator Saga</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">Quản lý giao dịch Saga</h1>
+            <p class="page-subtitle">Theo dõi trạng thái và lịch sử các giao dịch Saga</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button nz-button nzType="primary" (click)="loadData()" [nzLoading]="loading">
+                <span nz-icon nzType="reload"></span> Làm mới
+            </button>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <nz-table #transactionTable [nzData]="transactions" [nzLoading]="loading" nzSize="middle"
+            [nzScroll]="{ x: '1000px', y: 'calc(100vh - 450px)' }" [(nzPageSize)]="pageSize" [nzShowPagination]="false"
+            [nzFrontPagination]="true" [(nzPageIndex)]="pageIndex">
+            <thead>
+                <tr>
+                    <th nzWidth="200px">ID</th>
+                    <th nzWidth="200px">Mã đơn hàng (Order ID)</th>
+                    <th nzWidth="150px">Trạng thái</th>
+                    <th nzWidth="200px">Bước hiện tại</th>
+                    <th nzWidth="180px">Ngày tạo</th>
+                    <th nzWidth="180px">Ngày cập nhật</th>
+                    <th nzWidth="100px">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let data of transactionTable.data">
+                    <td>{{ data.id }}</td>
+                    <td><b>{{ data.orderId }}</b></td>
+                    <td>
+                        <nz-tag [nzColor]="getStatusColor(data.status)">
+                            {{ data.status }}
+                        </nz-tag>
+                    </td>
+                    <td>
+                        <nz-tag>{{ data.currentStep || 'N/A' }}</nz-tag>
+                    </td>
+                    <td>{{ data.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ data.updatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>
+                        <button nz-button nzType="link" (click)="viewDetail(data)">
+                            <span nz-icon nzType="eye"></span> Chi tiết
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </nz-table>
+
+        <div class="table-footer" *ngIf="transactions.length > 0">
+            <span class="total-text">
+                Hiển thị <b>{{ (pageIndex - 1) * pageSize + 1 }}</b> - <b>{{ Math.min(pageIndex * pageSize,
+                    transactions.length) }}</b> trong tổng số <b>{{ transactions.length }}</b> kết quả
+            </span>
+            <nz-pagination [(nzPageIndex)]="pageIndex" [nzTotal]="transactions.length" [(nzPageSize)]="pageSize"
+                [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50, 100]">
+            </nz-pagination>
+        </div>
+    </div>
+</div>
+
+<nz-modal [(nzVisible)]="isDetailVisible" [nzTitle]="'Chi tiết giao dịch Saga'" [nzFooter]="null"
+    (nzOnCancel)="handleCancelDetail()" [nzWidth]="800">
+    <ng-container *nzModalContent>
+        <app-saga-transaction-detail *ngIf="selectedTransaction"
+            [transaction]="selectedTransaction"></app-saga-transaction-detail>
+    </ng-container>
+</nz-modal>

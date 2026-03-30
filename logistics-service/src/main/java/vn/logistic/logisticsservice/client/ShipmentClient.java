@@ -7,9 +7,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import vn.logistic.logisticsservice.dto.ShipmentDto;
 
+import java.util.List;
+
 @FeignClient(name = "shipment-service", url = "${service.shipment.url}")
 public interface ShipmentClient {
-    
+
+    @GetMapping("/shipment")
+    List<ShipmentDto> getAllShipments();
+
     @GetMapping("/shipment/code/{code}")
     ShipmentDto getShipmentByCode(@PathVariable("code") String code);
 

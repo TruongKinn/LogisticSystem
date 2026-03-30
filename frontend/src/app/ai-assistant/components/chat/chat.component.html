@@ -1,0 +1,112 @@
+<div class="page-container">
+    <nz-breadcrumb [nzAutoGenerate]="false" style="margin-bottom: 16px;">
+        <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+        </nz-breadcrumb-item>
+        <nz-breadcrumb-item>Hệ thống</nz-breadcrumb-item>
+        <nz-breadcrumb-item>AI Assistant</nz-breadcrumb-item>
+    </nz-breadcrumb>
+
+    <div class="header-actions">
+        <div>
+            <h1 class="page-title">AI Assistant</h1>
+            <p class="page-subtitle">Trợ lý thông minh hỗ trợ giải đáp thắc mắc và tư vấn sản phẩm</p>
+        </div>
+        <!-- RAG Status + Actions -->
+        <div class="header-right">
+            <div class="rag-status" *ngIf="ragStatus">
+                <span nz-icon nzType="database" nzTheme="outline" style="margin-right: 4px;"></span>
+                <span class="rag-count">{{ ragIndexCount }} sản phẩm đã index</span>
+                <nz-tag *ngIf="!ragStatus.syncing" [nzColor]="ragReady ? 'green' : 'orange'" style="margin-left: 6px; margin-right: 0;">
+                    {{ ragReady ? 'RAG Ready' : 'Empty' }}
+                </nz-tag>
+                <nz-tag *ngIf="ragStatus.syncing" [nzColor]="'blue'" style="margin-left: 6px; margin-right: 0;">
+                    <span nz-icon nzType="sync" nzSpin></span> Syncing...
+                </nz-tag>
+            </div>
+            <button nz-button nzType="primary" nzSize="small" (click)="syncIndex()" [nzLoading]="isSyncing"
+                nz-tooltip nzTooltipTitle="Đồng bộ lại danh sách sản phẩm vào RAG">
+                <span nz-icon nzType="cloud-sync" *ngIf="!isSyncing"></span> Sync Data
+            </button>
+            <button nz-button nzType="default" nzSize="small" (click)="clearChat()"
+                nz-tooltip nzTooltipTitle="Xóa lịch sử chat">
+                <span nz-icon nzType="delete"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-room-wrapper">
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="header-info">
+                    <span nz-icon [nzType]="useRag ? 'fund' : 'api'" nzTheme="outline"
+                          class="ai-icon" [class.rag-mode]="useRag"></span>
+                    <div class="header-text">
+                        <h3>Antigravity Bot</h3>
+                        <p>{{ useRag ? 'RAG Mode — tư vấn sản phẩm từ catalog thực tế' : 'Gemini 2.5 Flash — trả lời câu hỏi chung' }}</p>
+                    </div>
+                </div>
+                <!-- Mode Toggle -->
+                <div class="mode-toggle">
+                    <span class="toggle-label" [class.active]="!useRag">🤖 Gemini</span>
+                    <nz-switch [(ngModel)]="useRag" nzSize="small"
+                        nz-tooltip [nzTooltipTitle]="useRag ? 'Đang RAG mode — tắt về Gemini thường' : 'Bật RAG để AI tìm sản phẩm thực tế'">
+                    </nz-switch>
+                    <span class="toggle-label" [class.active]="useRag">🔍 RAG</span>
+                </div>
+            </div>
+
+            <div class="message-list" #scrollContainer>
+                <div *ngFor="let msg of messages" class="message-item" [ngClass]="msg.role">
+                    <div class="avatar">
+                        <span nz-icon [nzType]="msg.role === 'user' ? 'user' : 'robot'"></span>
+                    </div>
+                    <div class="message-bubble">
+                        <div class="message-content">{{ msg.content }}</div>
+                        <div class="message-footer">
+                            <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+                            <nz-tag *ngIf="msg.role === 'assistant' && msg.source === 'rag'"
+                                [nzColor]="'cyan'" class="source-tag">
+                                <span nz-icon nzType="fund"></span> RAG
+                            </nz-tag>
+                            <nz-tag *ngIf="msg.role === 'assistant' && msg.source === 'gemini'"
+                                [nzColor]="'purple'" class="source-tag">
+                                <span nz-icon nzType="api"></span> Gemini
+                            </nz-tag>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div *ngIf="isLoading" class="message-item assistant">
+                    <div class="avatar">
+                        <span nz-icon nzType="robot"></span>
+                    </div>
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="mode-hint" [class.rag-hint]="useRag">
+                    <span nz-icon [nzType]="useRag ? 'search' : 'message'" style="margin-right: 4px;"></span>
+                    {{ useRag ? 'Hỏi về sản phẩm, giá cả, so sánh...' : 'Hỏi bất cứ điều gì...' }}
+                </div>
+                <div class="input-wrapper">
+                    <textarea nz-input [(ngModel)]="userInput"
+                        [placeholder]="useRag ? 'Ví dụ: Tìm sản phẩm dưới 50k, sản phẩm nào tốt nhất...' : 'Hỏi tôi bất cứ điều gì...'"
+                        (keydown.enter)="onEnter($event)" [nzAutosize]="{ minRows: 1, maxRows: 4 }">
+                    </textarea>
+                    <button nz-button nzType="primary" nzShape="circle" (click)="sendMessage()"
+                        class="send-btn" [disabled]="!userInput.trim() || isLoading">
+                        <span nz-icon nzType="send"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

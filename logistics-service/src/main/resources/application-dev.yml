@@ -1,3 +1,5 @@
+server:
+  port: 8093
 spring:
   config:
     activate:
@@ -14,7 +16,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
 
 # OpenFeign Clients Config
 service:
