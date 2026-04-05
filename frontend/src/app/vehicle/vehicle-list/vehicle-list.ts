@@ -1,7 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LogisticService } from '../../shared/services/logistic.service';
+
+import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -12,6 +16,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import { finalize } from 'rxjs';
 
 @Component({
@@ -20,7 +25,10 @@ import { finalize } from 'rxjs';
     imports: [
         CommonModule,
         FormsModule,
-        NzTableModule, NzButtonModule, NzInputModule, NzTagModule, NzIconModule, NzToolTipModule, NzBreadCrumbModule, NzPaginationModule, NzDividerModule
+        ReactiveFormsModule,
+        RouterLink,
+        NzTableModule, NzButtonModule, NzInputModule, NzTagModule, NzIconModule, NzToolTipModule, NzBreadCrumbModule, NzPaginationModule, NzDividerModule,
+        NzModalModule, NzFormModule
     ],
     templateUrl: './vehicle-list.html',
     styles: [`
@@ -43,8 +51,21 @@ export class VehicleList implements OnInit {
     pageSize = 10;
     totalElements = 0;
 
+    createModalVisible = false;
+    createForm = inject(FormBuilder).group({
+        plateNumber: ['', [Validators.required]],
+        brand: [''],
+        model: [''],
+        type: ['', [Validators.required]],
+        capacityKg: [0],
+        volumeM3: [0],
+        manufactureYear: [null],
+        color: ['']
+    });
+
     private logisticService = inject(LogisticService);
     private cdr = inject(ChangeDetectorRef);
+    private message = inject(NzMessageService);
 
     ngOnInit(): void {
         this.loadData();
@@ -95,6 +116,39 @@ export class VehicleList implements OnInit {
             case 'MAINTENANCE': return 'warning';
             case 'BROKEN': return 'red';
             default: return 'default';
+        }
+    }
+
+    openCreateModal(): void {
+        this.createForm.reset();
+        this.createModalVisible = true;
+    }
+
+    submitCreate(): void {
+        if (this.createForm.valid) {
+            this.loading = true;
+            this.logisticService.createVehicle(this.createForm.value)
+                .pipe(finalize(() => {
+                    this.loading = false;
+                    this.cdr.detectChanges();
+                }))
+                .subscribe({
+                    next: () => {
+                        this.message.success('Tạo phương tiện thành công');
+                        this.createModalVisible = false;
+                        this.loadData(0);
+                    },
+                    error: (err) => {
+                        this.message.error(err.error?.message || 'Lỗi khi tạo phương tiện');
+                    }
+                });
+        } else {
+            Object.values(this.createForm.controls).forEach(control => {
+                if (control.invalid) {
+                    control.markAsDirty();
+                    control.updateValueAndValidity({ onlySelf: true });
+                }
+            });
         }
     }
 }

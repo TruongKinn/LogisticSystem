@@ -14,4 +14,6 @@ public interface DriverService {
     List<DriverResponse> getAvailableDriversByZone(String zone);
     DriverResponse createDriver(CreateDriverRequest request);
     DriverResponse updateStatus(Long id, DriverStatus status);
+    int importDrivers(org.springframework.web.multipart.MultipartFile file);
+    byte[] generateImportTemplate();
 }

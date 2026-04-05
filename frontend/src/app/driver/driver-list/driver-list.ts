@@ -1,7 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LogisticService } from '../../shared/services/logistic.service';
+
+import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -21,7 +25,10 @@ import { finalize } from 'rxjs';
     imports: [
         CommonModule,
         FormsModule,
-        NzTableModule, NzButtonModule, NzInputModule, NzTagModule, NzIconModule, NzToolTipModule, NzBreadCrumbModule, NzPaginationModule, NzDividerModule
+        ReactiveFormsModule,
+        RouterLink,
+        NzTableModule, NzButtonModule, NzInputModule, NzTagModule, NzIconModule, NzToolTipModule, NzBreadCrumbModule, NzPaginationModule, NzDividerModule,
+        NzModalModule, NzFormModule
     ],
     templateUrl: './driver-list.html',
     styles: [`
@@ -36,6 +43,7 @@ import { finalize } from 'rxjs';
     `]
 })
 export class DriverList implements OnInit {
+    allDrivers: any[] = [];
     drivers: any[] = [];
     loading = false;
     searchValue = '';
@@ -43,6 +51,18 @@ export class DriverList implements OnInit {
     currentPage = 0;
     pageSize = 10;
     totalElements = 0;
+
+    createModalVisible = false;
+    createForm = inject(FormBuilder).group({
+        employeeCode: ['', [Validators.required]],
+        fullName: ['', [Validators.required]],
+        phone: ['', [Validators.required]],
+        email: [''],
+        identityCard: [''],
+        licenseClass: [''],
+        zone: [''],
+        address: ['']
+    });
 
     private logisticService = inject(LogisticService);
     private cdr = inject(ChangeDetectorRef);
@@ -63,14 +83,17 @@ export class DriverList implements OnInit {
         .subscribe({
             next: (data) => {
                 if (data && data.length) {
+                    this.allDrivers = data;
                     this.drivers = data.slice(this.currentPage * this.pageSize, (this.currentPage + 1) * this.pageSize);
                     this.totalElements = data.length;
                 } else {
+                    this.allDrivers = [];
                     this.drivers = [];
                     this.totalElements = 0;
                 }
             },
             error: () => {
+                this.allDrivers = [];
                 this.drivers = [];
                 this.totalElements = 0;
             }
@@ -108,5 +131,104 @@ export class DriverList implements OnInit {
             case 'SUSPENDED': return 'stop';
             default: return 'info-circle';
         }
+    }
+
+    openCreateModal(): void {
+        this.createForm.reset();
+        this.createModalVisible = true;
+    }
+
+    submitCreate(): void {
+        if (this.createForm.valid) {
+            this.loading = true;
+            this.logisticService.createDriver(this.createForm.value)
+                .pipe(finalize(() => {
+                    this.loading = false;
+                    this.cdr.detectChanges();
+                }))
+                .subscribe({
+                    next: () => {
+                        this.message.success('Tạo tài xế thành công');
+                        this.createModalVisible = false;
+                        this.loadData(0);
+                    },
+                    error: (err) => {
+                        this.message.error(err.error?.message || 'Lỗi khi tạo tài xế');
+                    }
+                });
+        } else {
+            Object.values(this.createForm.controls).forEach(control => {
+                if (control.invalid) {
+                    control.markAsDirty();
+                    control.updateValueAndValidity({ onlySelf: true });
+                }
+            });
+        }
+    }
+
+    cloneDriver(driver: any): void {
+        this.createForm.patchValue({
+            employeeCode: (driver.employeeCode || '') + '_COPY',
+            fullName: driver.fullName,
+            phone: driver.phone,
+            email: driver.email,
+            identityCard: driver.identityCard,
+            licenseClass: driver.licenseClass,
+            zone: driver.zone,
+            address: driver.address
+        });
+        this.createModalVisible = true;
+    }
+
+    onFileChange(event: any): void {
+        const target: DataTransfer = <DataTransfer>(event.target);
+        if (target.files.length !== 1) {
+            this.message.error('Vui lòng chọn 1 file duy nhất');
+            return;
+        }
+        
+        const file = target.files[0];
+        this.loading = true;
+        
+        this.logisticService.importDrivers(file)
+            .pipe(finalize(() => {
+                this.loading = false;
+                this.cdr.detectChanges();
+                event.target.value = null; // Clear input
+            }))
+            .subscribe({
+                next: (res) => {
+                    this.message.success(res.message || `Đã import thành công ${res.count || 0} tài xế mới.`);
+                    this.loadData(0);
+                },
+                error: (err) => {
+                    this.message.error(err.error?.message || 'Có lỗi xảy ra khi import file từ Server');
+                }
+            });
+    }
+
+    downloadTemplate(): void {
+        this.loading = true;
+        this.logisticService.downloadDriverImportTemplate()
+            .pipe(finalize(() => {
+                this.loading = false;
+                this.cdr.detectChanges();
+            }))
+            .subscribe({
+                next: (blob) => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'driver_import_template.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                    this.message.success('Tải template thành công');
+                },
+                error: () => {
+                    this.message.error('Có lỗi xảy ra khi tải template');
+                }
+            });
     }
 }

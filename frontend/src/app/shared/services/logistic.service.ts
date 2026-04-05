@@ -38,6 +38,24 @@ export class LogisticService {
     return this.http.get<any[]>(`${this.baseUrl}/driver`);
   }
 
+  getDriverById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/driver/${id}`);
+  }
+
+  createDriver(driver: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/driver`, driver);
+  }
+
+  importDrivers(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.baseUrl}/driver/import`, formData);
+  }
+
+  downloadDriverImportTemplate(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/driver/import-template`, { responseType: 'blob' });
+  }
+
   updateDriverStatus(id: number, status: string): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/driver/${id}/status?status=${status}`, {});
   }
@@ -45,6 +63,14 @@ export class LogisticService {
   // Vehicle APIs
   getVehicles(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/vehicle`);
+  }
+
+  getVehicleById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/vehicle/${id}`);
+  }
+
+  createVehicle(vehicle: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/vehicle`, vehicle);
   }
 
   // Logistics Orchestrator API

@@ -13,10 +13,17 @@
             <p class="page-subtitle">Quản lý danh mục tài xế, kiểm tra thông tin liên lạc và trạng thái hoạt động</p>
         </div>
         <div style="display: flex; gap: 12px;">
-            <button nz-button nzType="default">
+            <button nz-button nzType="default" style="border-radius: 8px;">
                 <span nz-icon nzType="export"></span> Xuất Excel
             </button>
-            <button nz-button nzType="primary" nzSize="large" style="border-radius: 8px;">
+            <button nz-button nzType="default" style="border-radius: 8px;" (click)="downloadTemplate()" [nzLoading]="loading">
+                <span nz-icon nzType="download"></span> Tải Template
+            </button>
+            <input type="file" #fileInput (change)="onFileChange($event)" style="display: none;" accept=".xlsx, .xls" />
+            <button nz-button nzType="default" style="border-radius: 8px;" (click)="fileInput.click()">
+                <span nz-icon nzType="import"></span> Nhập Excel
+            </button>
+            <button nz-button nzType="primary" style="border-radius: 8px;" (click)="openCreateModal()">
                 <span nz-icon nzType="plus"></span> Thêm mới tài xế
             </button>
         </div>
@@ -30,7 +37,7 @@
             <ng-template #suffixIconSearch>
                 <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
             </ng-template>
-            <button nz-button nzType="default" (click)="onSearch()" class="ms-2">Tìm kiếm</button>
+            <button nz-button nzType="primary" (click)="onSearch()" class="ms-2" style="border-radius: 8px;">Tìm kiếm</button>
         </div>
     </div>
 
@@ -51,7 +58,7 @@
                 <tr *ngFor="let data of basicTable.data">
                     <td>{{ data.id || data.driverId }}</td>
                     <td>
-                        <a><b>{{ data.fullName || data.name }}</b></a>
+                        <a [routerLink]="['/drivers', data.id || data.driverId]"><b>{{ data.fullName || data.name }}</b></a>
                     </td>
                     <td>{{ data.phone || data.phoneNumber }}</td>
                     <td>{{ data.licenseNo || data.licenseNumber || 'N/A' }}</td>
@@ -63,13 +70,15 @@
                     </td>
                     <td nzRight>
                         <div class="action-buttons">
-                            <a nz-tooltip nzTooltipTitle="Chi tiết">
-                                <span nz-icon nzType="eye" nzTheme="outline"></span>
-                            </a>
-                            <nz-divider nzType="vertical"></nz-divider>
-                            <a nz-tooltip nzTooltipTitle="Chỉnh sửa">
-                                <span nz-icon nzType="edit" nzTheme="outline"></span>
-                            </a>
+                            <button nz-button nzType="text" nzShape="circle" [routerLink]="['/drivers', data.id || data.driverId]" nz-tooltip nzTooltipTitle="Chi tiết">
+                                <span nz-icon nzType="eye" style="color: var(--primary-color);"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Nhân bản" (click)="cloneDriver(data)">
+                                <span nz-icon nzType="copy" style="color: #722ed1;"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Chỉnh sửa">
+                                <span nz-icon nzType="edit" style="color: #faad14;"></span>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -87,3 +96,64 @@
         </div>
     </div>
 </div>
+
+<nz-modal [(nzVisible)]="createModalVisible" nzTitle="Thêm mới tài xế" (nzOnCancel)="createModalVisible = false" [nzFooter]="null" [nzWidth]="800">
+    <ng-container *nzModalContent>
+        <form nz-form nzLayout="vertical" [formGroup]="createForm" (ngSubmit)="submitCreate()">
+            <div class="filter-section border-0 p-0" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px;">
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true" nzRequired>Mã nhân viên</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập mã nhân viên">
+                        <input nz-input formControlName="employeeCode" placeholder="Ví dụ: TX001" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true" nzRequired>Họ và tên</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập họ tên">
+                        <input nz-input formControlName="fullName" placeholder="Nhập họ và tên" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true" nzRequired>Số điện thoại</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập số điện thoại">
+                        <input nz-input formControlName="phone" placeholder="090..." />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Địa chỉ Email</nz-form-label>
+                    <nz-form-control nzErrorTip="Email không hợp lệ">
+                        <input nz-input formControlName="email" type="email" placeholder="email@example.com" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Căn cước công dân</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="identityCard" placeholder="Số CCCD" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Hạng bằng lái</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="licenseClass" placeholder="Ví dụ: B2, C, E" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Khu vực hoạt động</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="zone" placeholder="Ví dụ: Miền Nam" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Địa chỉ thường trú</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="address" placeholder="Nhập địa chỉ" />
+                    </nz-form-control>
+                </nz-form-item>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+                <button nz-button nzType="default" type="button" (click)="createModalVisible = false">Hủy</button>
+                <button nz-button nzType="primary" [nzLoading]="loading">Thêm tài xế</button>
+            </div>
+        </form>
+    </ng-container>
+</nz-modal>

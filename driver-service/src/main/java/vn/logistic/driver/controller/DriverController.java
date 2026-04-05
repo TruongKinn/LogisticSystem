@@ -66,4 +66,27 @@ public class DriverController {
         log.info("Update driver {} status to {}", id, status);
         return ResponseEntity.ok(driverService.updateStatus(id, status));
     }
+
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import tài xế từ file Excel")
+    public ResponseEntity<java.util.Map<String, Object>> importDrivers(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        log.info("Import drivers from file: {}", file.getOriginalFilename());
+        int count = driverService.importDrivers(file);
+        
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("message", "Successfully imported " + count + " drivers.");
+        response.put("count", count);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/import-template")
+    @Operation(summary = "Tải file Excel mẫu để import tài xế")
+    public ResponseEntity<byte[]> downloadImportTemplate() {
+        byte[] data = driverService.generateImportTemplate();
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.set(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=driver_import_template.xlsx");
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+        return ResponseEntity.ok().headers(headers).body(data);
+    }
 }

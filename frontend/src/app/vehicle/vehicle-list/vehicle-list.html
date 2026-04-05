@@ -3,21 +3,21 @@
         <nz-breadcrumb-item>
             <span nz-icon nzType="home"></span>
         </nz-breadcrumb-item>
-        <nz-breadcrumb-item>TÃ€I Xáº¾ & PHÆ¯Æ NG TIá»†N</nz-breadcrumb-item>
-        <nz-breadcrumb-item>Danh sÃ¡ch xe</nz-breadcrumb-item>
+        <nz-breadcrumb-item>TÀI XẾ & PHƯƠNG TIỆN</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Danh sách xe</nz-breadcrumb-item>
     </nz-breadcrumb>
 
     <div class="header-actions">
         <div>
-            <h1 class="page-title">Danh sÃ¡ch PhÆ°Æ¡ng tiá»‡n</h1>
-            <p class="page-subtitle">Kiá»ƒm soÃ¡t danh sÃ¡ch phÆ°Æ¡ng tiá»‡n, táº£i trá»ng vÃ  tÃ¬nh tráº¡ng ká»¹ thuáº­t hiá»‡n táº¡i</p>
+            <h1 class="page-title">Danh sách Phương tiện</h1>
+            <p class="page-subtitle">Kiểm soát danh sách phương tiện, tải trọng và tình trạng kỹ thuật hiện tại</p>
         </div>
         <div style="display: flex; gap: 12px;">
-            <button nz-button nzType="default">
-                <span nz-icon nzType="export"></span> Xuáº¥t Excel
+            <button nz-button nzType="default" style="border-radius: 8px;">
+                <span nz-icon nzType="export"></span> Xuất Excel
             </button>
-            <button nz-button nzType="primary" nzSize="large" style="border-radius: 8px;">
-                <span nz-icon nzType="plus"></span> ThÃªm má»›i phÆ°Æ¡ng tiá»‡n
+            <button nz-button nzType="primary" style="border-radius: 8px;" (click)="openCreateModal()">
+                <span nz-icon nzType="plus"></span> Thêm mới phương tiện
             </button>
         </div>
     </div>
@@ -25,12 +25,12 @@
     <div class="filter-section border-0 mt-4">
         <div style="display: flex; align-items: center; gap: 8px;">
             <nz-input-group [nzSuffix]="suffixIconSearch" style="width: 320px;">
-                <input type="text" nz-input placeholder="TÃ¬m kiáº¿m biá»ƒn sá»‘ xe..." [(ngModel)]="searchValue" (keydown.enter)="onSearch()" />
+                <input type="text" nz-input placeholder="Tìm kiếm biển số xe..." [(ngModel)]="searchValue" (keydown.enter)="onSearch()" />
             </nz-input-group>
             <ng-template #suffixIconSearch>
                 <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
             </ng-template>
-            <button nz-button nzType="default" (click)="onSearch()" class="ms-2">TÃ¬m kiáº¿m</button>
+            <button nz-button nzType="primary" (click)="onSearch()" class="ms-2" style="border-radius: 8px;">Tìm kiếm</button>
         </div>
     </div>
 
@@ -40,22 +40,22 @@
             <thead>
                 <tr>
                     <th nzWidth="80px">ID</th>
-                    <th>Biá»ƒn sá»‘ xe</th>
-                    <th>Loáº¡i xe</th>
+                    <th>Biển số xe</th>
+                    <th>Loại xe</th>
                     <th>Tải trọng (kg)</th>
-                    <th>Sá»©c chá»©a (m3)</th>
-                    <th nzWidth="150px">Tráº¡ng thÃ¡i</th>
-                    <th nzWidth="120px" nzRight>Thao tÃ¡c</th>
+                    <th>Sức chứa (m3)</th>
+                    <th nzWidth="150px">Trạng thái</th>
+                    <th nzWidth="120px" nzRight>Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let data of basicTable.data">
                     <td>{{ data.id || data.vehicleId }}</td>
                     <td>
-                        <a><b>{{ data.plateNumber || data.licensePlate }}</b></a>
+                        <a [routerLink]="['/vehicles', data.id || data.vehicleId]"><b>{{ data.plateNumber || data.licensePlate }}</b></a>
                     </td>
                     <td>{{ data.type || data.vehicleType || 'N/A' }}</td>
-                    <td>{{ data.maxWeightKg || data.capacityInTons || data.capacityWeight || 0 }}</td>
+                    <td>{{ data.capacityKg || data.maxWeightKg || data.capacityInTons || data.capacityWeight || 0 }}</td>
                     <td>{{ data.volumeM3 || data.capacityInVolume || data.capacityVolume || 0 }} m3</td>
                     <td>
                         <nz-tag [nzColor]="getStatusColor(data.status)">
@@ -64,13 +64,12 @@
                     </td>
                     <td nzRight>
                         <div class="action-buttons">
-                            <a nz-tooltip nzTooltipTitle="Chi tiáº¿t">
-                                <span nz-icon nzType="eye" nzTheme="outline"></span>
-                            </a>
-                            <nz-divider nzType="vertical"></nz-divider>
-                            <a nz-tooltip nzTooltipTitle="Chá»‰nh sá»­a">
-                                <span nz-icon nzType="edit" nzTheme="outline"></span>
-                            </a>
+                            <button nz-button nzType="text" nzShape="circle" [routerLink]="['/vehicles', data.id || data.vehicleId]" nz-tooltip nzTooltipTitle="Chi tiết">
+                                <span nz-icon nzType="eye" style="color: var(--primary-color);"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Chỉnh sửa">
+                                <span nz-icon nzType="edit" style="color: #faad14;"></span>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -79,7 +78,7 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
             <span class="total-text">
-                Hiá»ƒn thá»‹ <b>{{ vehicles.length > 0 ? currentPage * pageSize + 1 : 0 }}</b> - <b>{{ (currentPage + 1) * pageSize > totalElements ? totalElements : (currentPage + 1) * pageSize }}</b> trong tá»•ng sá»‘ <b>{{ totalElements }}</b> káº¿t quáº£
+                Hiển thị <b>{{ vehicles.length > 0 ? currentPage * pageSize + 1 : 0 }}</b> - <b>{{ (currentPage + 1) * pageSize > totalElements ? totalElements : (currentPage + 1) * pageSize }}</b> trong tổng số <b>{{ totalElements }}</b> kết quả
             </span>
             <nz-pagination [nzPageIndex]="currentPage + 1" [nzTotal]="totalElements" [nzPageSize]="pageSize"
                 [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50, 100]"
@@ -88,3 +87,64 @@
         </div>
     </div>
 </div>
+
+<nz-modal [(nzVisible)]="createModalVisible" nzTitle="Thêm mới phương tiện" (nzOnCancel)="createModalVisible = false" [nzFooter]="null" [nzWidth]="800">
+    <ng-container *nzModalContent>
+        <form nz-form nzLayout="vertical" [formGroup]="createForm" (ngSubmit)="submitCreate()">
+            <div class="filter-section border-0 p-0" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px;">
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true" nzRequired>Biển số xe</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập biển số xe">
+                        <input nz-input formControlName="plateNumber" placeholder="Ví dụ: 29A-123.45" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true" nzRequired>Loại xe</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập loại xe">
+                        <input nz-input formControlName="type" placeholder="Ví dụ: Xe tải thùng kín" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Hãng sản xuất</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="brand" placeholder="Ví dụ: Hino, Isuzu" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Dòng xe</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="model" placeholder="Ví dụ: NQR75" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Tải trọng (kg)</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input type="number" formControlName="capacityKg" placeholder="Ví dụ: 1500" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Thể tích (m3)</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input type="number" formControlName="volumeM3" placeholder="Ví dụ: 15" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Năm sản xuất</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input type="number" formControlName="manufactureYear" placeholder="Ví dụ: 2020" />
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Màu xe</nz-form-label>
+                    <nz-form-control>
+                        <input nz-input formControlName="color" placeholder="Ví dụ: Trắng" />
+                    </nz-form-control>
+                </nz-form-item>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+                <button nz-button nzType="default" type="button" (click)="createModalVisible = false">Hủy</button>
+                <button nz-button nzType="primary" [nzLoading]="loading">Thêm phương tiện</button>
+            </div>
+        </form>
+    </ng-container>
+</nz-modal>

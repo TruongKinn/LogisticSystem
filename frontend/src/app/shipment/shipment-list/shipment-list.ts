@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { LogisticService } from '../../shared/services/logistic.service';
 
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
@@ -81,6 +81,10 @@ export class ShipmentList implements OnInit {
     statusModalVisible = false;
     assignModalVisible = false;
     selectedShipment: any = null;
+
+    drivers: any[] = [];
+    vehicles: any[] = [];
+    isAssignDataLoading = false;
 
     statuses: ShipmentStatus[] = ['PENDING', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'DELAYED', 'CANCELLED'];
 
@@ -254,6 +258,24 @@ export class ShipmentList implements OnInit {
             driverId: shipment.driverId || null,
             vehicleId: shipment.vehicleId || null
         });
+        
+        this.isAssignDataLoading = true;
+        forkJoin({
+            drivers: this.logisticService.getDrivers(),
+            vehicles: this.logisticService.getVehicles()
+        }).pipe(finalize(() => {
+            this.isAssignDataLoading = false;
+            this.cdr.detectChanges();
+        })).subscribe({
+            next: (data) => {
+                this.drivers = data.drivers || [];
+                this.vehicles = data.vehicles || [];
+            },
+            error: () => {
+                this.message.error('Không thể tải danh sách tài xế/xe');
+            }
+        });
+
         this.assignModalVisible = true;
     }
 

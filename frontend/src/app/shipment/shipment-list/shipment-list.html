@@ -13,13 +13,13 @@
             <p class="page-subtitle">Quản lý vận đơn, cập nhật trạng thái và gán tài xế/xe ngay trong một màn hình.</p>
         </div>
         <div class="toolbar-actions">
-            <button nz-button nzType="default">
+            <button nz-button nzType="default" style="border-radius: 8px;">
                 <span nz-icon nzType="export"></span> Xuất Excel
             </button>
-            <button nz-button nzType="default" nzDanger>
+            <button nz-button nzType="default" nzDanger style="border-radius: 8px;">
                 <span nz-icon nzType="experiment"></span> Dữ liệu mẫu
             </button>
-            <button nz-button nzType="primary" nzSize="large" (click)="openCreateModal()">
+            <button nz-button nzType="primary" (click)="openCreateModal()" style="border-radius: 8px;">
                 <span nz-icon nzType="plus"></span> Thêm vận đơn
             </button>
         </div>
@@ -33,7 +33,7 @@
             <ng-template #suffixIconSearch>
                 <span nz-icon nzType="search" style="color: #bfbfbf;"></span>
             </ng-template>
-            <button nz-button nzType="default" (click)="onSearch()">Tìm kiếm</button>
+            <button nz-button nzType="primary" (click)="onSearch()" style="border-radius: 8px;">Tìm kiếm</button>
         </div>
     </div>
 
@@ -74,18 +74,18 @@
                     </td>
                     <td nzRight>
                         <div class="action-buttons">
-                            <a [routerLink]="['/shipments', data.id || data.shipmentId]" nz-tooltip nzTooltipTitle="Chi tiết">
-                                <span nz-icon nzType="eye"></span>
-                            </a>
-                            <a nz-tooltip nzTooltipTitle="Đổi trạng thái" (click)="openStatusModal(data)">
-                                <span nz-icon nzType="edit"></span>
-                            </a>
-                            <a nz-tooltip nzTooltipTitle="Gán tài xế/xe" (click)="openAssignModal(data)">
-                                <span nz-icon nzType="deployment-unit"></span>
-                            </a>
-                            <a nz-tooltip nzTooltipTitle="Làm mới" (click)="loadData(currentPage)">
+                            <button nz-button nzType="text" nzShape="circle" [routerLink]="['/shipments', data.id || data.shipmentId]" nz-tooltip nzTooltipTitle="Chi tiết">
+                                <span nz-icon nzType="eye" style="color: var(--primary-color);"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Đổi trạng thái" (click)="openStatusModal(data)">
+                                <span nz-icon nzType="edit" style="color: #faad14;"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Gán tài xế/xe" (click)="openAssignModal(data)">
+                                <span nz-icon nzType="deployment-unit" style="color: #52c41a;"></span>
+                            </button>
+                            <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Làm mới" (click)="loadData(currentPage)">
                                 <span nz-icon nzType="reload"></span>
-                            </a>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -209,15 +209,19 @@
         <form nz-form nzLayout="vertical" [formGroup]="assignForm" (ngSubmit)="submitAssign()">
             <nz-alert nzType="info" nzShowIcon [nzMessage]="selectedShipment?.shipmentCode || 'Vận đơn'" [nzDescription]="'Nhập ID tài xế và ID xe để phân công vận chuyển.'"></nz-alert>
             <nz-form-item class="mt-3">
-                <nz-form-label [nzNoColon]="true">ID tài xế</nz-form-label>
-                <nz-form-control nzErrorTip="Vui lòng nhập ID tài xế">
-                    <input nz-input type="number" formControlName="driverId" placeholder="1" />
+                <nz-form-label [nzNoColon]="true">Tài xế phụ trách</nz-form-label>
+                <nz-form-control nzErrorTip="Vui lòng chọn tài xế">
+                    <nz-select formControlName="driverId" [nzShowSearch]="true" nzPlaceHolder="Chọn tài xế..." [nzLoading]="isAssignDataLoading" nzAllowClear>
+                        <nz-option *ngFor="let d of drivers" [nzValue]="d.id" [nzLabel]="d.fullName + ' (' + d.employeeCode + ')'"></nz-option>
+                    </nz-select>
                 </nz-form-control>
             </nz-form-item>
             <nz-form-item>
-                <nz-form-label [nzNoColon]="true">ID xe</nz-form-label>
-                <nz-form-control nzErrorTip="Vui lòng nhập ID xe">
-                    <input nz-input type="number" formControlName="vehicleId" placeholder="1" />
+                <nz-form-label [nzNoColon]="true">Phương tiện (Xe)</nz-form-label>
+                <nz-form-control nzErrorTip="Vui lòng chọn xe">
+                    <nz-select formControlName="vehicleId" [nzShowSearch]="true" nzPlaceHolder="Chọn phương tiện..." [nzLoading]="isAssignDataLoading" nzAllowClear>
+                        <nz-option *ngFor="let v of vehicles" [nzValue]="v.id" [nzLabel]="v.plateNumber + ' - ' + v.type"></nz-option>
+                    </nz-select>
                 </nz-form-control>
             </nz-form-item>
             <div style="display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
