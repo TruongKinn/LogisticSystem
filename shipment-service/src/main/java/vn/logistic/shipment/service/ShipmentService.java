@@ -18,4 +18,5 @@ public interface ShipmentService {
     ShipmentResponse createShipment(CreateShipmentRequest request);
     ShipmentResponse updateStatus(Long id, UpdateStatusRequest request);
     ShipmentResponse assignDriverAndVehicle(Long id, Long driverId, Long vehicleId);
+    ShipmentResponse unassignDriverAndVehicle(Long id);
 }

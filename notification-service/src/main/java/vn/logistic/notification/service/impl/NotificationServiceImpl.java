@@ -8,6 +8,7 @@ import vn.logistic.notification.service.NotificationService;
 import vn.logistic.notification.dto.NotificationDto;
 import vn.logistic.notification.dto.NotificationPageResponse;
 import vn.logistic.notification.dto.NotificationRequest;
+import vn.logistic.notification.event.dto.DriverAssignedEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,10 +59,10 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void processDriverAssignedEvent(Map<String, Object> eventData) {
+    public void processDriverAssignedEvent(DriverAssignedEvent eventData) {
         log.info("Processing driver assigned event for notification: {}", eventData);
-        String shipmentCode = (String) eventData.get("shipmentCode");
-        Long driverId = eventData.get("driverId") != null ? ((Number) eventData.get("driverId")).longValue() : null;
+        String shipmentCode = eventData.getPayload() != null ? eventData.getPayload().getShipmentCode() : null;
+        Long driverId = eventData.getPayload() != null ? eventData.getPayload().getDriverId() : null;
         createAndBroadcast(NotificationRequest.builder()
                 .recipientId(driverId != null ? String.valueOf(driverId) : "logistics-team")
                 .type("DRIVER_ASSIGNED")

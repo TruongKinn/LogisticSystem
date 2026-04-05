@@ -15,9 +15,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.agent.common.TokenType;
+import vn.agent.exception.InvalidDataException;
 import vn.agent.controller.request.TwoFactorRequest;
 import vn.agent.controller.response.TwoFactorResponse;
 import vn.agent.service.TwoFactorInstructionService;
+import vn.agent.service.JwtService;
 import vn.agent.service.TwoFactorService;
 
 @RestController
@@ -29,6 +32,7 @@ public class TwoFactorController {
 
     private final TwoFactorService twoFactorService;
     private final TwoFactorInstructionService instructionService;
+    private final JwtService jwtService;
 
     @Operation(summary = "Get 2FA Instruction PDF", description = "Generate and return PDF instruction for 2FA setup")
     @GetMapping(value = "/instruction", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -47,14 +51,20 @@ public class TwoFactorController {
 
     @Operation(summary = "Get 2FA Status", description = "Check if two-factor authentication is enabled for user")
     @GetMapping("/status")
-    public ResponseEntity<Boolean> getStatus(@RequestHeader("userId") Long userId) {
+    public ResponseEntity<Boolean> getStatus(
+            @RequestHeader(value = "userId", required = false) Long userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        userId = resolveUserId(userId, authorization);
         log.info("GET /2fa/status, userId: {}", userId);
         return ResponseEntity.ok(twoFactorService.is2faEnabled(userId));
     }
 
     @Operation(summary = "Generate 2FA Secret", description = "Generate secret and QR code for Google Authenticator")
     @PostMapping("/generate")
-    public ResponseEntity<TwoFactorResponse> generateSecret(@RequestHeader("userId") Long userId) {
+    public ResponseEntity<TwoFactorResponse> generateSecret(
+            @RequestHeader(value = "userId", required = false) Long userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        userId = resolveUserId(userId, authorization);
         log.info("POST /2fa/generate, userId: {}", userId);
 
         TwoFactorResponse response = twoFactorService.generateSecret(userId);
@@ -63,8 +73,10 @@ public class TwoFactorController {
 
     @Operation(summary = "Verify and Enable 2FA", description = "Verify OTP code and enable 2FA for user")
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyAndEnable(@RequestHeader("userId") Long userId,
+    public ResponseEntity<String> verifyAndEnable(@RequestHeader(value = "userId", required = false) Long userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody TwoFactorRequest request) {
+        userId = resolveUserId(userId, authorization);
         log.info("POST /2fa/verify, userId: {}", userId);
 
         boolean isValid = twoFactorService.verifyAndEnable(userId, request.getOtp());
@@ -78,10 +90,25 @@ public class TwoFactorController {
 
     @Operation(summary = "Disable 2FA", description = "Disable two-factor authentication for user")
     @PostMapping("/disable")
-    public ResponseEntity<String> disable(@RequestHeader("userId") Long userId) {
+    public ResponseEntity<String> disable(@RequestHeader(value = "userId", required = false) Long userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        userId = resolveUserId(userId, authorization);
         log.info("POST /2fa/disable, userId: {}", userId);
 
         twoFactorService.disable(userId);
         return ResponseEntity.ok("2FA disabled successfully");
+    }
+
+    private Long resolveUserId(Long userId, String authorization) {
+        if (userId != null) {
+            return userId;
+        }
+
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);
+            return jwtService.extractUserId(token, TokenType.ACCESS_TOKEN);
+        }
+
+        throw new InvalidDataException("Missing user identity for 2FA request");
     }
 }

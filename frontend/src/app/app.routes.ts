@@ -7,6 +7,7 @@ export const routes: Routes = [
     { path: '', loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.Dashboard), canActivate: [authGuard] },
     { path: 'login', component: LoginComponent },
     { path: 'register', component: RegisterComponent },
+    { path: 'password-center', loadComponent: () => import('./auth/password-center/password-center.component').then(m => m.PasswordCenterComponent) },
     { path: '2fa-setup', loadComponent: () => import('./auth/two-factor-setup/two-factor-setup').then(m => m.TwoFactorSetupComponent), canActivate: [authGuard] },
     { path: 'crypto', loadComponent: () => import('./crypto/crypto.component').then(m => m.CryptoComponent), canActivate: [authGuard] },
     { path: 'user', loadChildren: () => import('./user/user.routes').then(m => m.USER_ROUTES), canActivate: [authGuard] },

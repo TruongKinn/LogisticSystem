@@ -10,6 +10,11 @@ const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const router = inject(Router);
+
+    if (shouldSkipAuth(req.url)) {
+        return next(req);
+    }
+
     const token = authService.getToken();
 
     let authReq = req;
@@ -32,6 +37,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             }
             return throwError(() => error);
         })
+    );
+};
+
+const shouldSkipAuth = (url: string): boolean => {
+    return (
+        url.includes('/auth/access-token') ||
+        url.includes('/auth/refresh-token') ||
+        url.includes('/auth/exchange-keycloak-token') ||
+        url.includes('/auth/captcha') ||
+        url.includes('/realms/')
     );
 };
 

@@ -7,6 +7,8 @@ import vn.logistic.vehicle.common.VehicleStatus;
 import vn.logistic.vehicle.common.VehicleType;
 import vn.logistic.vehicle.controller.request.CreateVehicleRequest;
 import vn.logistic.vehicle.controller.response.VehicleResponse;
+import vn.logistic.vehicle.exception.BusinessConflictException;
+import vn.logistic.vehicle.exception.ResourceNotFoundException;
 import vn.logistic.vehicle.model.Vehicle;
 import vn.logistic.vehicle.repository.VehicleRepository;
 import vn.logistic.vehicle.service.VehicleService;
@@ -32,14 +34,14 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse getVehicleById(Long id) {
         return vehicleRepository.findById(id)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: " + id));
     }
 
     @Override
     public VehicleResponse getVehicleByPlateNumber(String plateNumber) {
         return vehicleRepository.findByPlateNumber(plateNumber)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found by plateNumber: " + plateNumber));
     }
 
     @Override
@@ -68,7 +70,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .yearOfManufacture(request.getYearOfManufacture())
                 .status(VehicleStatus.AVAILABLE)
                 .build();
-                
+
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
         return mapToResponse(savedVehicle);
     }
@@ -76,7 +78,13 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public VehicleResponse updateStatus(Long id, VehicleStatus status) {
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: " + id));
+
+        if (status == VehicleStatus.IN_USE && vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new BusinessConflictException(
+                    "Vehicle " + id + " is in status " + vehicle.getStatus() + " and cannot be moved to IN_USE");
+        }
+
         vehicle.setStatus(status);
         return mapToResponse(vehicleRepository.save(vehicle));
     }
@@ -84,7 +92,13 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public VehicleResponse assignDriver(Long id, Long driverId) {
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: " + id));
+
+        if (vehicle.getCurrentDriverId() != null && !vehicle.getCurrentDriverId().equals(driverId)) {
+            throw new BusinessConflictException(
+                    "Vehicle " + id + " already has driver " + vehicle.getCurrentDriverId());
+        }
+
         vehicle.setCurrentDriverId(driverId);
         return mapToResponse(vehicleRepository.save(vehicle));
     }
@@ -92,7 +106,7 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public VehicleResponse unassignDriver(Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: " + id));
         vehicle.setCurrentDriverId(null);
         return mapToResponse(vehicleRepository.save(vehicle));
     }

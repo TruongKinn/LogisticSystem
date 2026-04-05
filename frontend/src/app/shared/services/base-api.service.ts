@@ -10,8 +10,17 @@ export abstract class BaseApiService {
 
     protected constructor(protected baseUrl: string) { }
 
-    protected get<T>(path: string, params?: any): Observable<T> {
-        return this.http.get<T>(`${this.baseUrl}${path}`, { params });
+    protected get<T>(path: string, optionsOrParams?: any): Observable<T> {
+        const options = optionsOrParams && (
+            optionsOrParams.headers ||
+            optionsOrParams.params ||
+            optionsOrParams.responseType ||
+            optionsOrParams.observe
+        )
+            ? optionsOrParams
+            : { params: optionsOrParams };
+
+        return this.http.get<T>(`${this.baseUrl}${path}`, options) as Observable<T>;
     }
 
     protected post<T>(path: string, body: any, options?: any): Observable<T> {

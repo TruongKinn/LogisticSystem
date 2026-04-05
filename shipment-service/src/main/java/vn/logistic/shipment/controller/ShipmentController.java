@@ -84,4 +84,11 @@ public class ShipmentController {
         log.info("Assign driver {} and vehicle {} to shipment {}", driverId, vehicleId, id);
         return ResponseEntity.ok(shipmentService.assignDriverAndVehicle(id, driverId, vehicleId));
     }
+
+    @PutMapping("/{id}/unassign")
+    @Operation(summary = "Unassign driver and vehicle from shipment")
+    public ResponseEntity<ShipmentResponse> unassignDriverAndVehicle(@PathVariable Long id) {
+        log.info("Unassign delivery resources from shipment {}", id);
+        return ResponseEntity.ok(shipmentService.unassignDriverAndVehicle(id));
+    }
 }

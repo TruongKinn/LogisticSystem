@@ -21,6 +21,10 @@ export class LogisticService {
     return this.http.get<any>(`${this.baseUrl}/shipment/code/${code}`);
   }
 
+  getShipmentById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/shipment/${id}`);
+  }
+
   createShipment(shipment: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/shipment`, shipment);
   }
@@ -48,6 +52,10 @@ export class LogisticService {
     return this.http.post<any>(`${this.baseUrl}/logistics/assign?shipmentCode=${shipmentCode}&driverId=${driverId}&vehicleId=${vehicleId}`, {});
   }
 
+  unassignShipment(id: number): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/shipment/${id}/unassign`, {});
+  }
+
   getFullDeliveryInfo(shipmentCode: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/logistics/info/${shipmentCode}`);
   }
@@ -55,5 +63,9 @@ export class LogisticService {
   // Tracking API
   getTrackingHistory(shipmentCode: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/tracking/shipment/${shipmentCode}/history`);
+  }
+
+  getCurrentTracking(shipmentCode: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/tracking/shipment/${shipmentCode}/current`);
   }
 }

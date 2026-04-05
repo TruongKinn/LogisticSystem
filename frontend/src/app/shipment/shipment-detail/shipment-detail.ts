@@ -1,17 +1,17 @@
-import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { LogisticService } from '../../shared/services/logistic.service';
 
+import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
-import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
-import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { finalize } from 'rxjs/operators';
+import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
 
 @Component({
     selector: 'app-shipment-detail',
@@ -19,7 +19,13 @@ import { finalize } from 'rxjs/operators';
     imports: [
         CommonModule,
         RouterLink,
-        NzCardModule, NzDescriptionsModule, NzButtonModule, NzTagModule, NzIconModule, NzBreadCrumbModule, NzTabsModule
+        NzCardModule,
+        NzDescriptionsModule,
+        NzButtonModule,
+        NzTagModule,
+        NzIconModule,
+        NzBreadCrumbModule,
+        NzTabsModule
     ],
     templateUrl: './shipment-detail.html',
     styles: [`
@@ -38,7 +44,6 @@ export class ShipmentDetail implements OnInit {
 
     private logisticService = inject(LogisticService);
     private route = inject(ActivatedRoute);
-    private cdr = inject(ChangeDetectorRef);
     private message = inject(NzMessageService);
 
     ngOnInit(): void {
@@ -54,32 +59,38 @@ export class ShipmentDetail implements OnInit {
 
     loadShipmentDetails(): void {
         if (!this.shipmentCode) return;
+
+        this.error = false;
+        this.shipmentDetails = null;
         this.loading = true;
-        
-        // Since the route might pass ID or Code, we use getShipmentByCode
-        this.logisticService.getShipmentByCode(this.shipmentCode)
-        .pipe(finalize(() => {
-            this.loading = false;
-            this.cdr.detectChanges();
-        }))
-        .subscribe({
-            next: (data) => {
-                if(data) {
-                    this.shipmentDetails = data;
-                } else {
+
+        const shipmentId = Number(this.shipmentCode);
+        const request$ = Number.isFinite(shipmentId) && shipmentId > 0
+            ? this.logisticService.getShipmentById(shipmentId)
+            : this.logisticService.getShipmentByCode(this.shipmentCode);
+
+        request$
+            .pipe(finalize(() => {
+                this.loading = false;
+            }))
+            .subscribe({
+                next: (data) => {
+                    if (data) {
+                        this.shipmentDetails = data;
+                    } else {
+                        this.error = true;
+                    }
+                },
+                error: (err) => {
                     this.error = true;
+                    this.message.error(err.error?.message || err.message || 'Lỗi khi tải thông tin chi tiết vận đơn!');
                 }
-            },
-            error: () => {
-                this.error = true;
-                this.message.error('Lỗi khi tải thông tin chi tiết vận đơn!');
-            }
-        });
+            });
     }
 
     getStatusColor(status: string): string {
         if (!status) return 'default';
-        switch(status) {
+        switch (status) {
             case 'DELIVERED': return 'green';
             case 'IN_TRANSIT': return 'blue';
             case 'PENDING': return 'orange';

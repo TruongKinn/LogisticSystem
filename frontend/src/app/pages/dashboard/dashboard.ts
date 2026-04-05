@@ -1,28 +1,34 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NzCardModule } from 'ng-zorro-antd/card';
-import { NzGridModule } from 'ng-zorro-antd/grid';
-import { NzStatisticModule } from 'ng-zorro-antd/statistic';
-import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzTableModule } from 'ng-zorro-antd/table';
+import { Component, ChangeDetectorRef, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ChartConfiguration, ChartType } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
+import { catchError, forkJoin, of } from 'rxjs';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzGridModule } from 'ng-zorro-antd/grid';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzStatisticModule } from 'ng-zorro-antd/statistic';
+import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartType } from 'chart.js';
-import { DashboardService } from '../../shared/services/dashboard.service';
 import { DashboardStats } from '../../shared/models/dashboard-stats.model';
+import { DashboardService } from '../../shared/services/dashboard.service';
+import { LogisticService } from '../../shared/services/logistic.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     NzCardModule,
     NzGridModule,
     NzStatisticModule,
     NzIconModule,
+    NzTagModule,
     NzSpinModule,
     NzTableModule,
     NzBreadCrumbModule,
@@ -39,11 +45,18 @@ export class Dashboard implements OnInit, OnDestroy {
   loading = true;
   stats: DashboardStats = {};
   lastUpdated: Date = new Date();
+
   autoRefreshInterval: any;
   autoRefreshEnabled = true;
-  refreshIntervalSeconds = 30; // Auto refresh every 30 seconds
+  refreshIntervalSeconds = 30;
 
-  // User Chart Configuration
+  liveTrackingInterval: any;
+  liveTrackingEnabled = true;
+  liveTrackingRefreshSeconds = 20;
+  liveTrackingLoading = false;
+  liveTrackingUpdatedAt: Date = new Date();
+  liveShipments: any[] = [];
+
   userChartData: ChartConfiguration['data'] = {
     labels: ['Active', 'Inactive', 'Blocked'],
     datasets: [
@@ -54,6 +67,7 @@ export class Dashboard implements OnInit, OnDestroy {
       }
     ]
   };
+
   userChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -69,7 +83,6 @@ export class Dashboard implements OnInit, OnDestroy {
   };
   userChartType: ChartType = 'doughnut';
 
-  // Order Chart Configuration
   orderChartData: ChartConfiguration['data'] = {
     labels: ['Pending', 'Processing', 'Completed', 'Cancelled'],
     datasets: [
@@ -80,6 +93,7 @@ export class Dashboard implements OnInit, OnDestroy {
       }
     ]
   };
+
   orderChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -95,7 +109,6 @@ export class Dashboard implements OnInit, OnDestroy {
   };
   orderChartType: ChartType = 'pie';
 
-  // Product Price Chart Configuration
   productPriceChartData: ChartConfiguration['data'] = {
     labels: ['Giá TB', 'Giá Min', 'Giá Max'],
     datasets: [
@@ -108,6 +121,7 @@ export class Dashboard implements OnInit, OnDestroy {
       }
     ]
   };
+
   productPriceChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -130,16 +144,20 @@ export class Dashboard implements OnInit, OnDestroy {
 
   constructor(
     private dashboardService: DashboardService,
+    private logisticService: LogisticService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
     this.startAutoRefresh();
+    this.loadLiveTrackingBoard();
+    this.startLiveTrackingRefresh();
   }
 
   ngOnDestroy(): void {
     this.stopAutoRefresh();
+    this.stopLiveTrackingRefresh();
   }
 
   loadDashboardData(): void {
@@ -150,7 +168,7 @@ export class Dashboard implements OnInit, OnDestroy {
         this.updateCharts();
         this.lastUpdated = new Date();
         this.loading = false;
-        this.cdr.detectChanges(); // Force change detection
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading dashboard data:', error);
@@ -160,8 +178,61 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
+  loadLiveTrackingBoard(): void {
+    this.liveTrackingLoading = true;
+    this.logisticService.getShipments().subscribe({
+      next: (shipments) => {
+        const recentShipments = [...(shipments || [])]
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+          .slice(0, 5);
+
+        if (!recentShipments.length) {
+          this.liveShipments = [];
+          this.liveTrackingLoading = false;
+          this.liveTrackingUpdatedAt = new Date();
+          this.cdr.detectChanges();
+          return;
+        }
+
+        forkJoin(
+          recentShipments.map((shipment) =>
+            this.logisticService.getCurrentTracking(shipment.shipmentCode).pipe(
+              catchError(() => of(null))
+            )
+          )
+        ).subscribe({
+          next: (currentTrackingList) => {
+            this.liveShipments = recentShipments.map((shipment, index) => {
+              const currentTracking = currentTrackingList[index];
+              return {
+                ...shipment,
+                liveStatus: currentTracking?.status || shipment.status || 'PENDING',
+                liveLocation: currentTracking?.location || shipment.receiverAddress || 'Đang cập nhật',
+                liveNote: currentTracking?.note || shipment.note || '',
+                liveTimestamp: currentTracking?.timestamp || shipment.createdAt,
+                liveReference: currentTracking?.shipmentCode || shipment.shipmentCode
+              };
+            });
+            this.liveTrackingUpdatedAt = new Date();
+            this.liveTrackingLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: (error) => {
+            console.error('Error loading live tracking board:', error);
+            this.liveTrackingLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading shipments for live tracking:', error);
+        this.liveTrackingLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   updateCharts(): void {
-    // Update User Chart - Create new object to trigger change detection
     if (this.stats.userStats) {
       this.userChartData = {
         ...this.userChartData,
@@ -177,7 +248,6 @@ export class Dashboard implements OnInit, OnDestroy {
       };
     }
 
-    // Update Order Chart - Create new object
     if (this.stats.orderStats) {
       this.orderChartData = {
         ...this.orderChartData,
@@ -194,7 +264,6 @@ export class Dashboard implements OnInit, OnDestroy {
       };
     }
 
-    // Update Product Price Chart - Create new object
     if (this.stats.productStats) {
       this.productPriceChartData = {
         ...this.productPriceChartData,
@@ -212,7 +281,6 @@ export class Dashboard implements OnInit, OnDestroy {
       };
     }
 
-    // Trigger chart updates
     setTimeout(() => {
       this.charts?.forEach(chart => {
         chart.chart?.update();
@@ -227,7 +295,6 @@ export class Dashboard implements OnInit, OnDestroy {
     }).format(value);
   }
 
-  // Auto refresh methods
   startAutoRefresh(): void {
     if (this.autoRefreshEnabled) {
       this.autoRefreshInterval = setInterval(() => {
@@ -242,6 +309,20 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   }
 
+  startLiveTrackingRefresh(): void {
+    if (this.liveTrackingEnabled) {
+      this.liveTrackingInterval = setInterval(() => {
+        this.loadLiveTrackingBoard();
+      }, this.liveTrackingRefreshSeconds * 1000);
+    }
+  }
+
+  stopLiveTrackingRefresh(): void {
+    if (this.liveTrackingInterval) {
+      clearInterval(this.liveTrackingInterval);
+    }
+  }
+
   toggleAutoRefresh(): void {
     this.autoRefreshEnabled = !this.autoRefreshEnabled;
     if (this.autoRefreshEnabled) {
@@ -251,8 +332,22 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   }
 
+  toggleLiveTracking(): void {
+    this.liveTrackingEnabled = !this.liveTrackingEnabled;
+    if (this.liveTrackingEnabled) {
+      this.startLiveTrackingRefresh();
+      this.loadLiveTrackingBoard();
+    } else {
+      this.stopLiveTrackingRefresh();
+    }
+  }
+
   manualRefresh(): void {
     this.loadDashboardData();
+  }
+
+  refreshLiveTracking(): void {
+    this.loadLiveTrackingBoard();
   }
 
   getTimeSinceUpdate(): string {
@@ -262,5 +357,31 @@ export class Dashboard implements OnInit, OnDestroy {
     if (minutes < 60) return `${minutes} phút trước`;
     const hours = Math.floor(minutes / 60);
     return `${hours} giờ trước`;
+  }
+
+  getLiveTrackingAge(): string {
+    const seconds = Math.floor((new Date().getTime() - this.liveTrackingUpdatedAt.getTime()) / 1000);
+    if (seconds < 60) return `${seconds} giây trước`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} phút trước`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} giờ trước`;
+  }
+
+  getLiveStatusColor(status: string): string {
+    switch ((status || '').toUpperCase()) {
+      case 'DELIVERED':
+        return 'green';
+      case 'IN_TRANSIT':
+        return 'blue';
+      case 'PICKED_UP':
+        return 'processing';
+      case 'DELAYED':
+        return 'warning';
+      case 'CANCELLED':
+        return 'red';
+      default:
+        return 'default';
+    }
   }
 }

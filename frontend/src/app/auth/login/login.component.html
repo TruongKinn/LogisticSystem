@@ -1,140 +1,263 @@
-<div class="auth-wrapper">
-    <div class="auth-container">
-        <!-- Decorative Left Side -->
-        <div class="auth-side-brand">
-            <div class="brand-content">
-                <div class="ghost-logo">
-                    <span nz-icon nzType="smile" nzTheme="outline" class="logo-icon"></span>
-                    <h2 class="logo-text">AI Agent</h2>
+<div class="auth-page">
+    <div class="auth-orb auth-orb-a"></div>
+    <div class="auth-orb auth-orb-b"></div>
+
+    <section class="auth-shell">
+        <aside class="auth-hero">
+            <div class="hero-badge">
+                <span nz-icon nzType="cluster" nzTheme="outline"></span>
+                Logistics Platform
+            </div>
+
+            <h1>Đăng nhập một nơi, dùng hai phương thức</h1>
+            <p>
+                Chọn <strong>Bearer token</strong> để đăng nhập bằng tài khoản hệ thống, hoặc chuyển sang
+                <strong>Keycloak</strong> nếu bạn dùng SSO tập trung.
+            </p>
+
+            <div class="hero-points">
+                <div class="hero-point">
+                    <span nz-icon nzType="lock"></span>
+                    Tài khoản nội bộ + 2FA
                 </div>
-                <p class="brand-description">
-                    Trải nghiệm nền tảng AI Agent thông minh nhất thế giới. Kết nối, làm việc và sáng tạo không giới
-                    hạn.
-                </p>
-                <button nz-button nzType="default" nzShape="round" class="get-started-btn">
-                    TÌM HIỂU THÊM
+                <div class="hero-point">
+                    <span nz-icon nzType="safety-certificate"></span>
+                    SSO qua Keycloak
+                </div>
+                <div class="hero-point">
+                    <span nz-icon nzType="cloud"></span>
+                    Token được lưu đồng nhất
+                </div>
+            </div>
+        </aside>
+
+        <section class="auth-card">
+            <button type="button" class="theme-toggle" (click)="toggleTheme()" aria-label="Chuyển giao diện">
+                <span nz-icon [nzType]="isDarkMode ? 'sun' : 'moon'"></span>
+            </button>
+
+            <div class="card-header">
+                <span class="eyebrow">Authentication</span>
+                <h2>Đăng nhập</h2>
+                <p>Chọn một trong hai cách đăng nhập bên dưới.</p>
+            </div>
+
+            <div class="auth-switch">
+                <button
+                    type="button"
+                    class="switch-btn"
+                    [class.active]="authMode === 'bearer'"
+                    (click)="selectAuthMode('bearer')"
+                >
+                    <span nz-icon nzType="key"></span>
+                    Bearer token
+                </button>
+                <button
+                    type="button"
+                    class="switch-btn"
+                    [class.active]="authMode === 'keycloak'"
+                    (click)="selectAuthMode('keycloak')"
+                >
+                    <span nz-icon nzType="safety-certificate"></span>
+                    Keycloak
                 </button>
             </div>
-            <div class="brand-shapes">
-                <div class="shape shape-1"></div>
-                <div class="shape shape-2"></div>
-            </div>
-        </div>
 
-        <!-- Login Form Side -->
-        <div class="auth-side-form">
-            <div class="theme-toggle" (click)="toggleTheme()">
-                <span nz-icon [nzType]="isDarkMode ? 'sun' : 'moon'"></span>
-            </div>
+            <nz-alert
+                *ngIf="errorMsg"
+                nzType="error"
+                [nzMessage]="errorMsg"
+                nzShowIcon
+                class="error-banner"
+            ></nz-alert>
 
-            <div class="form-header">
-                <h1>Đăng nhập</h1>
-                <p>Mừng bạn quay trở lại! Vui lòng đăng nhập vào tài khoản của bạn.</p>
-            </div>
+            <form
+                *ngIf="authMode === 'bearer'"
+                nz-form
+                nzLayout="vertical"
+                [formGroup]="loginForm"
+                (ngSubmit)="submitForm()"
+                class="login-form"
+            >
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Tên đăng nhập</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập tên đăng nhập!">
+                        <nz-input-group nzSize="large" [nzPrefix]="userIcon">
+                            <input nz-input formControlName="username" placeholder="Nhập username" />
+                        </nz-input-group>
+                        <ng-template #userIcon>
+                            <span nz-icon nzType="user"></span>
+                        </ng-template>
+                    </nz-form-control>
+                </nz-form-item>
 
-            <nz-tabset nzCentered>
-                <!-- Tab Đăng nhập hệ thống -->
-                <nz-tab nzTitle="Đăng nhập hệ thống">
-                    <form nz-form nzLayout="vertical" [formGroup]="loginForm" (ngSubmit)="submitForm()"
-                        class="login-form">
-                        <nz-form-item>
-                            <nz-form-label [nzNoColon]="true">Tên đăng nhập</nz-form-label>
-                            <nz-form-control nzErrorTip="Vui lòng nhập tên đăng nhập!">
-                                <nz-input-group nzSize="large" [nzPrefix]="userIcon">
-                                    <input nz-input formControlName="username" placeholder="Username" />
-                                </nz-input-group>
-                                <ng-template #userIcon><span nz-icon nzType="user"></span></ng-template>
-                            </nz-form-control>
-                        </nz-form-item>
+                <nz-form-item>
+                    <nz-form-label [nzNoColon]="true">Mật khẩu</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập mật khẩu!">
+                        <nz-input-group nzSize="large" [nzPrefix]="lockIcon" [nzSuffix]="suffixTemplate">
+                            <input
+                                [type]="passwordVisible ? 'text' : 'password'"
+                                nz-input
+                                formControlName="password"
+                                placeholder="••••••••"
+                            />
+                        </nz-input-group>
+                        <ng-template #lockIcon>
+                            <span nz-icon nzType="lock"></span>
+                        </ng-template>
+                        <ng-template #suffixTemplate>
+                            <span
+                                nz-icon
+                                [nzType]="passwordVisible ? 'eye-invisible' : 'eye'"
+                                (click)="passwordVisible = !passwordVisible"
+                                class="password-toggle"
+                            ></span>
+                        </ng-template>
+                    </nz-form-control>
+                </nz-form-item>
 
-                        <nz-form-item>
-                            <nz-form-label [nzNoColon]="true">Mật khẩu</nz-form-label>
-                            <nz-form-control nzErrorTip="Vui lòng nhập mật khẩu!">
-                                <nz-input-group nzSize="large" [nzPrefix]="lockIcon" [nzSuffix]="suffixTemplate">
-                                    <input [type]="passwordVisible ? 'text' : 'password'" nz-input
-                                        formControlName="password" placeholder="••••••••" />
-                                </nz-input-group>
-                                <ng-template #lockIcon><span nz-icon nzType="lock"></span></ng-template>
-                                <ng-template #suffixTemplate>
-                                    <span nz-icon [nzType]="passwordVisible ? 'eye-invisible' : 'eye'"
-                                        (click)="passwordVisible = !passwordVisible" class="password-toggle"></span>
-                                </ng-template>
-                            </nz-form-control>
-                        </nz-form-item>
+                <nz-form-item *ngIf="requireOtp" class="fade-item">
+                    <nz-form-label [nzNoColon]="true">Mã OTP (2FA)</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập mã OTP 6 số!">
+                        <nz-input-group nzSize="large" [nzPrefix]="keyIcon">
+                            <input
+                                #otpInput
+                                nz-input
+                                formControlName="otp"
+                                placeholder="000000"
+                                maxlength="6"
+                                autocomplete="one-time-code"
+                            />
+                        </nz-input-group>
+                        <ng-template #keyIcon>
+                            <span nz-icon nzType="key"></span>
+                        </ng-template>
+                    </nz-form-control>
+                </nz-form-item>
 
-                        <nz-form-item *ngIf="requireOtp" class="otp-section animated fadeIn">
-                            <nz-form-label [nzNoColon]="true">Mã OTP (2FA)</nz-form-label>
-                            <nz-form-control nzErrorTip="Vui lòng nhập mã OTP 6 số!">
-                                <nz-input-group nzSize="large" [nzPrefix]="keyIcon">
-                                    <input #otpInput nz-input formControlName="otp" placeholder="000000" maxlength="6"
-                                        autocomplete="one-time-code" />
-                                </nz-input-group>
-                                <ng-template #keyIcon><span nz-icon nzType="key"></span></ng-template>
-                            </nz-form-control>
-                        </nz-form-item>
-
-                        <nz-form-item *ngIf="requireCaptcha" class="captcha-section animated fadeIn">
-                            <nz-form-label [nzNoColon]="true">Mã CAPTCHA</nz-form-label>
-                            <nz-form-control nzErrorTip="Vui lòng nhập mã CAPTCHA!">
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <nz-input-group nzSize="large" [nzPrefix]="auditIcon" style="flex: 1;">
-                                        <input nz-input formControlName="captchaAnswer" placeholder="Mã xác nhận"
-                                            maxlength="4" />
-                                    </nz-input-group>
-                                    <img [src]="captchaBase64" alt="CAPTCHA"
-                                        style="height: 40px; border-radius: 4px; border: 1px solid #d9d9d9; cursor: pointer;"
-                                        (click)="refreshCaptcha()" nz-tooltip nzTooltipTitle="Nhấn để đổi mã khác" />
-                                </div>
-                                <ng-template #auditIcon><span nz-icon nzType="audit"></span></ng-template>
-                            </nz-form-control>
-                        </nz-form-item>
-
-                        <div class="form-actions">
-                            <label nz-checkbox formControlName="remember">Ghi nhớ</label>
-                            <a class="forgot-link">Quên mật khẩu?</a>
+                <nz-form-item *ngIf="requireCaptcha" class="fade-item">
+                    <nz-form-label [nzNoColon]="true">Mã CAPTCHA</nz-form-label>
+                    <nz-form-control nzErrorTip="Vui lòng nhập mã CAPTCHA!">
+                        <div class="captcha-row">
+                            <nz-input-group nzSize="large" [nzPrefix]="auditIcon" class="captcha-input">
+                                <input
+                                    nz-input
+                                    formControlName="captchaAnswer"
+                                    placeholder="Mã xác nhận"
+                                    maxlength="4"
+                                />
+                            </nz-input-group>
+                            <img
+                                [src]="captchaBase64"
+                                alt="CAPTCHA"
+                                class="captcha-image"
+                                (click)="refreshCaptcha()"
+                                nz-tooltip
+                                nzTooltipTitle="Nhấn để đổi mã khác"
+                            />
                         </div>
-                        <!-- 
-                        <div class="error-msg" *ngIf="errorMsg">
-                            <nz-alert nzType="error" [nzMessage]="errorMsg" nzShowIcon></nz-alert>
-                        </div> -->
+                        <ng-template #auditIcon>
+                            <span nz-icon nzType="audit"></span>
+                        </ng-template>
+                    </nz-form-control>
+                </nz-form-item>
 
-                        <button nz-button nzType="primary" nzSize="large" nzBlock class="submit-btn"
-                            [nzLoading]="isLoading" [disabled]="!loginForm.valid">
-                            ĐĂNG NHẬP
-                        </button>
-
-                        <div class="social-login">
-                            <p>Hoặc đăng nhập với</p>
-                            <div class="social-icons">
-                                <button type="button" class="social-btn"><span nz-icon nzType="google"></span></button>
-                                <button type="button" class="social-btn"><span nz-icon
-                                        nzType="facebook"></span></button>
-                                <button type="button" class="social-btn"><span nz-icon nzType="twitter"></span></button>
-                            </div>
-                        </div>
-
-                        <div class="auth-footer">
-                            Chưa có tài khoản? <a routerLink="/register">Đăng ký ngay</a>
-                        </div>
-                    </form>
-                </nz-tab>
-
-                <!-- Tab Đăng nhập Keycloak -->
-                <nz-tab nzTitle="Đăng nhập Keycloak">
-                    <div class="keycloak-login">
-                        <div class="keycloak-info">
-                            <span nz-icon nzType="safety-certificate" nzTheme="twotone" class="keycloak-icon"></span>
-                            <h3>Đăng nhập với Keycloak</h3>
-                            <p>Sử dụng tài khoản Keycloak của bạn để đăng nhập vào hệ thống một cách an toàn.</p>
-                        </div>
-                        <button nz-button nzType="primary" nzSize="large" nzBlock class="submit-btn"
-                            (click)="loginWithKeycloak()" [nzLoading]="isLoading">
-                            <span nz-icon nzType="login"></span>
-                            ĐĂNG NHẬP VỚI KEYCLOAK
-                        </button>
+                <div class="form-actions">
+                    <label nz-checkbox formControlName="remember">Ghi nhớ</label>
+                    <div class="form-links">
+                        <a routerLink="/password-center">Quên mật khẩu?</a>
+                        <a routerLink="/register">Đăng ký tài khoản</a>
                     </div>
-                </nz-tab>
-            </nz-tabset>
-        </div>
-    </div>
+                </div>
+
+                <button
+                    nz-button
+                    nzType="primary"
+                    nzSize="large"
+                    nzBlock
+                    class="submit-btn"
+                    [nzLoading]="isLoading"
+                    [disabled]="!loginForm.valid"
+                >
+                    Đăng nhập bằng Bearer token
+                </button>
+
+                <div class="form-note">
+                    Hệ thống sẽ tự bật OTP hoặc CAPTCHA khi cần.
+                    <a class="inline-help-link" (click)="openTwoFactorGuide()">Mã 2FA lấy ở đâu?</a>
+                </div>
+
+                <div class="setup-cta-row">
+                    <button
+                        type="button"
+                        nz-button
+                        nzSize="large"
+                        class="secondary-cta-btn"
+                        (click)="openTwoFactorSetup()"
+                    >
+                        <span nz-icon nzType="safety-certificate"></span>
+                        Thiết lập 2FA
+                    </button>
+                    <span class="setup-cta-hint">Nếu đã đăng nhập, nút này mở trang quét QR ngay.</span>
+                </div>
+            </form>
+
+            <div *ngIf="authMode === 'keycloak'" class="keycloak-panel">
+                <div class="keycloak-icon-wrap">
+                    <span nz-icon nzType="safety-certificate" nzTheme="twotone"></span>
+                </div>
+                <h3>Đăng nhập bằng Keycloak</h3>
+                <p>
+                    Dùng SSO để chuyển sang Keycloak, sau đó hệ thống sẽ đổi token thành session nội bộ cho
+                    gateway và các service phía sau.
+                </p>
+
+                <ul class="keycloak-list">
+                    <li>Phù hợp khi đã có tài khoản tập trung.</li>
+                    <li>Không cần nhập lại mật khẩu nội bộ.</li>
+                    <li>Token cuối cùng vẫn được hệ thống lưu đồng nhất.</li>
+                </ul>
+
+                <button
+                    nz-button
+                    nzType="primary"
+                    nzSize="large"
+                    nzBlock
+                    class="submit-btn keycloak-btn"
+                    [nzLoading]="isLoading"
+                    (click)="loginWithKeycloak()"
+                >
+                    Đăng nhập với Keycloak
+                </button>
+            </div>
+        </section>
+    </section>
+
+    <nz-modal
+        [(nzVisible)]="isVisibleTwoFactorGuide"
+        nzTitle="Hướng dẫn lấy mã 2FA"
+        [nzFooter]="null"
+        (nzOnCancel)="closeTwoFactorGuide()"
+    >
+        <ng-container *nzModalContent>
+            <div class="two-factor-guide-modal">
+                <p>
+                    Mã 2FA không phải do hệ thống tự sinh ở màn login. Bạn phải bật 2FA trước trong trang
+                    <strong>Thiết lập 2FA</strong> sau khi đã đăng nhập.
+                </p>
+                <ol>
+                    <li>Đăng nhập vào hệ thống.</li>
+                    <li>Mở menu <strong>Thiết lập 2FA</strong> hoặc vào route <code>/2fa-setup</code>.</li>
+                    <li>Quét QR bằng Google Authenticator hoặc ứng dụng OTP tương tự.</li>
+                    <li>Ứng dụng sẽ sinh mã 6 số thay đổi mỗi 30 giây.</li>
+                    <li>Khi lần sau hệ thống yêu cầu OTP, nhập chính mã 6 số đó vào ô đăng nhập.</li>
+                </ol>
+                <nz-alert
+                    nzType="info"
+                    nzShowIcon
+                    nzMessage="Nếu tài khoản chưa bật 2FA, bạn không cần nhập OTP."
+                ></nz-alert>
+            </div>
+        </ng-container>
+    </nz-modal>
 </div>

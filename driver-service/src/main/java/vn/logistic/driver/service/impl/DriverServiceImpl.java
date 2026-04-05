@@ -3,10 +3,12 @@ package vn.logistic.driver.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import vn.logistic.driver.common.DriverStatus;
 import vn.logistic.driver.controller.request.CreateDriverRequest;
 import vn.logistic.driver.controller.response.DriverResponse;
+import vn.logistic.driver.exception.BusinessConflictException;
+import vn.logistic.driver.exception.ResourceNotFoundException;
 import vn.logistic.driver.model.Driver;
-import vn.logistic.driver.common.DriverStatus;
 import vn.logistic.driver.repository.DriverRepository;
 import vn.logistic.driver.service.DriverService;
 
@@ -32,14 +34,14 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponse getDriverById(Long id) {
         return driverRepository.findById(id)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found: " + id));
     }
 
     @Override
     public DriverResponse getDriverByEmployeeCode(String employeeCode) {
         return driverRepository.findByEmployeeCode(employeeCode)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found by employeeCode: " + employeeCode));
     }
 
     @Override
@@ -70,7 +72,7 @@ public class DriverServiceImpl implements DriverService {
                 .rating(BigDecimal.valueOf(5.0))
                 .totalDeliveries(0)
                 .build();
-                
+
         Driver savedDriver = driverRepository.save(driver);
         return mapToResponse(savedDriver);
     }
@@ -78,7 +80,13 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public DriverResponse updateStatus(Long id, DriverStatus status) {
         Driver driver = driverRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found: " + id));
+
+        if (status == DriverStatus.BUSY && driver.getStatus() != DriverStatus.AVAILABLE) {
+            throw new BusinessConflictException(
+                    "Driver " + id + " is in status " + driver.getStatus() + " and cannot be moved to BUSY");
+        }
+
         driver.setStatus(status);
         return mapToResponse(driverRepository.save(driver));
     }

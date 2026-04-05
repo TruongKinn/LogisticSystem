@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, OnInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -62,11 +62,10 @@ export class App implements OnInit {
   constructor(
     private authService: AuthService,
     private userService: UserService,
-    private router: Router,
-    private notificationService: NotificationService,
-    private wsNotifService: WebSocketNotificationService,
-    private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) private platformId: Object
+  private router: Router,
+  private notificationService: NotificationService,
+  private wsNotifService: WebSocketNotificationService,
+  @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.unreadCount$ = this.wsNotifService.unreadCount$;
     this.notifications$ = this.wsNotifService.notifications$;
@@ -100,6 +99,9 @@ export class App implements OnInit {
         if (event === 'login') {
           this.loadUserAvatar();
           this.wsNotifService.connect();
+          if (this.router.url.startsWith('/login')) {
+            this.router.navigateByUrl('/', { replaceUrl: true });
+          }
         } else if (event === 'logout') {
           this.avatarUrl = undefined;
           this.wsNotifService.disconnect();
@@ -149,10 +151,7 @@ export class App implements OnInit {
       recipientId: localStorage.getItem('atg_user_id') || undefined
     };
 
-    this.notificationService.sendWsNotification(mockPayload).subscribe({
-      next: (res) => console.log('Bấm Test Web Socket Thành công:', res),
-      error: (err) => console.error('Lỗi khi gửi Test Socket:', err)
-    });
+    this.notificationService.sendWsNotification(mockPayload).subscribe();
   }
 
   loadUserAvatar() {
@@ -169,14 +168,13 @@ export class App implements OnInit {
         next: (user: any) => {
           if (user.avatarUrl) {
             const fullUrl = `${API_CONFIG.MINIO_URL}/${user.avatarUrl}?t=${new Date().getTime()}`;
-            console.log('App Component Avatar URL:', fullUrl);
             this.avatarUrl = fullUrl;
             localStorage.setItem('atg_avatar_url', fullUrl);
           } else {
             localStorage.removeItem('atg_avatar_url');
           }
         },
-        error: (err) => console.error('Failed to load user avatar', err)
+        error: () => undefined
       });
     }
   }
@@ -200,24 +198,24 @@ export class App implements OnInit {
 
   get username() {
     if (this.isBrowser) {
-      const firstName = localStorage.getItem('atg_first_name');
-      const lastName = localStorage.getItem('atg_last_name');
+      const firstName = this.authService.getStoredItem('atg_first_name');
+      const lastName = this.authService.getStoredItem('atg_last_name');
       if (firstName && lastName) {
         return `${firstName} ${lastName}`;
       }
-      return localStorage.getItem('atg_username') || 'User';
+      return this.authService.getStoredItem('atg_username') || 'User';
     }
     return 'User';
   }
 
   get userInitials() {
     if (this.isBrowser) {
-      const firstName = localStorage.getItem('atg_first_name');
-      const lastName = localStorage.getItem('atg_last_name');
+      const firstName = this.authService.getStoredItem('atg_first_name');
+      const lastName = this.authService.getStoredItem('atg_last_name');
       if (firstName && lastName) {
         return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
       }
-      const username = localStorage.getItem('atg_username');
+      const username = this.authService.getStoredItem('atg_username');
       return username ? username.charAt(0).toUpperCase() : 'U';
     }
     return 'U';

@@ -26,6 +26,7 @@ spring:
         value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
         properties:
           spring.json.trusted.packages: "*"
+          spring.json.type.mapping: driverAssignedEvent:vn.logistic.notification.event.dto.DriverAssignedEvent
     topic:
         shipment-created: logistics.shipment.created
         shipment-status-updated: logistics.shipment.status.updated

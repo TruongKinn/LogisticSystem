@@ -1,19 +1,21 @@
-import { Component, Inject, PLATFORM_ID, ChangeDetectorRef, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, ElementRef, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { NzFormModule } from 'ng-zorro-antd/form';
-import { NzInputModule } from 'ng-zorro-antd/input';
+import { OAuthService } from 'angular-oauth2-oidc';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
-import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
-import { NzTabsModule } from 'ng-zorro-antd/tabs';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { AuthService } from '../auth.service';
-import { OAuthService } from 'angular-oauth2-oidc';
 import { authConfig } from '../auth.config';
+
+type AuthMode = 'bearer' | 'keycloak';
 
 @Component({
     selector: 'app-login',
@@ -28,16 +30,17 @@ import { authConfig } from '../auth.config';
         NzCheckboxModule,
         NzAlertModule,
         NzIconModule,
-        NzTabsModule,
+        NzModalModule,
         NzToolTipModule
     ],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
 })
 export class LoginComponent implements OnInit {
-    @ViewChild('otpInput') otpInput?: ElementRef;
+    @ViewChild('otpInput') otpInput?: ElementRef<HTMLInputElement>;
 
     loginForm: FormGroup;
+    authMode: AuthMode = 'bearer';
     passwordVisible = false;
     isDarkMode = false;
     isBrowser: boolean;
@@ -47,13 +50,13 @@ export class LoginComponent implements OnInit {
     requireCaptcha = false;
     captchaBase64 = '';
     captchaToken = '';
+    isVisibleTwoFactorGuide = false;
 
     constructor(
         private fb: FormBuilder,
         private authService: AuthService,
         private notification: NzNotificationService,
         private router: Router,
-        private cdr: ChangeDetectorRef,
         private oauthService: OAuthService,
         @Inject(PLATFORM_ID) private platformId: Object
     ) {
@@ -71,37 +74,32 @@ export class LoginComponent implements OnInit {
             this.isDarkMode = savedTheme === 'dark';
             this.applyTheme();
 
-            // Configure OAuth
             this.oauthService.configure(authConfig);
             this.oauthService.setupAutomaticSilentRefresh();
 
-            console.log('LoginComponent: Starting Keycloak discovery loading...');
             this.oauthService.loadDiscoveryDocumentAndTryLogin().then(() => {
-                console.log('LoginComponent: Keycloak discovery loaded.');
-                console.log('LoginComponent: Identity claims:', this.oauthService.getIdentityClaims());
-                console.log('LoginComponent: Access token valid?', this.oauthService.hasValidAccessToken());
-
                 if (this.oauthService.hasValidAccessToken()) {
-                    console.log('LoginComponent: Found valid access token, handling callback...');
-                    this.handleKeycloakCallback();
-                } else {
-                    console.log('LoginComponent: No valid access token found.');
+                    setTimeout(() => this.handleKeycloakCallback(), 0);
                 }
-            }).catch(err => {
-                console.error('LoginComponent: Error loading discovery document', err);
+            }).catch(() => {
+                // Keycloak discovery is optional for the bearer flow.
             });
         }
     }
 
     ngOnInit(): void {
-        // Check if returning from Keycloak (redundant check, but safe)
-        if (this.isBrowser && this.oauthService.hasValidAccessToken()) {
-            console.log('ngOnInit: Valid token found, handling callback...');
-            this.handleKeycloakCallback();
+        if (this.isBrowser && this.authService.isAuthenticated()) {
+            this.router.navigate(['/']);
         }
     }
 
-    toggleTheme() {
+    selectAuthMode(mode: AuthMode): void {
+        this.authMode = mode;
+        this.errorMsg = '';
+        this.resetChallengeState();
+    }
+
+    toggleTheme(): void {
         this.isDarkMode = !this.isDarkMode;
         if (this.isBrowser) {
             localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light');
@@ -109,12 +107,33 @@ export class LoginComponent implements OnInit {
         }
     }
 
-    applyTheme() {
+    applyTheme(): void {
+        if (!this.isBrowser) {
+            return;
+        }
+
         if (this.isDarkMode) {
             document.body.classList.add('dark-theme');
         } else {
             document.body.classList.remove('dark-theme');
         }
+    }
+
+    private resetChallengeState(): void {
+        this.requireOtp = false;
+        this.requireCaptcha = false;
+        this.captchaBase64 = '';
+        this.captchaToken = '';
+
+        const otpControl = this.loginForm.get('otp');
+        otpControl?.clearValidators();
+        otpControl?.reset('');
+        otpControl?.updateValueAndValidity({ onlySelf: true });
+
+        const captchaControl = this.loginForm.get('captchaAnswer');
+        captchaControl?.clearValidators();
+        captchaControl?.reset('');
+        captchaControl?.updateValueAndValidity({ onlySelf: true });
     }
 
     refreshCaptcha(): void {
@@ -124,35 +143,62 @@ export class LoginComponent implements OnInit {
                 this.isLoading = false;
                 this.captchaToken = res.captchaToken;
                 this.captchaBase64 = res.base64Image;
-                this.loginForm.get('captchaAnswer')?.setValue('');
+                this.loginForm.get('captchaAnswer')?.reset('');
             },
             error: (err) => {
                 this.isLoading = false;
-                this.notification.error('Lỗi', 'Không thể tải mã CAPTCHA: ' + (err.error?.message || err.message || ''));
+                this.notification.error('Lỗi', 'Không thể tải CAPTCHA: ' + (err.error?.message || err.message || ''));
             }
         });
     }
 
     loginWithKeycloak(): void {
+        this.isLoading = true;
+        this.errorMsg = '';
         this.oauthService.initCodeFlow();
+    }
+
+    openTwoFactorGuide(): void {
+        this.isVisibleTwoFactorGuide = true;
+    }
+
+    closeTwoFactorGuide(): void {
+        this.isVisibleTwoFactorGuide = false;
+    }
+
+    openTwoFactorSetup(): void {
+        if (this.authService.isAuthenticated()) {
+            this.router.navigate(['/2fa-setup']);
+            return;
+        }
+
+        this.openTwoFactorGuide();
     }
 
     handleKeycloakCallback(): void {
         const keycloakToken = this.oauthService.getAccessToken();
-        if (keycloakToken) {
-            this.isLoading = true;
-            this.authService.exchangeKeycloakToken(keycloakToken).subscribe({
-                next: (res) => {
-                    this.isLoading = false;
-                    this.notification.success('Đăng nhập thành công', 'Chào mừng bạn quay trở lại!');
-                    this.router.navigate(['/']);
-                },
-                error: (err) => {
-                    this.isLoading = false;
-                    this.notification.error('Đăng nhập thất bại', err.error?.message || 'Không thể xác thực với Keycloak');
-                }
-            });
+        if (!keycloakToken) {
+            this.isLoading = false;
+            return;
         }
+
+        this.isLoading = true;
+        this.authService.exchangeKeycloakToken(keycloakToken).subscribe({
+            next: () => {
+                this.isLoading = false;
+                this.resetChallengeState();
+                this.notification.success('Đăng nhập thành công', 'Chào mừng bạn quay trở lại!');
+                this.router.navigateByUrl('/', { replaceUrl: true });
+            },
+            error: (err) => {
+                this.isLoading = false;
+                const message = err.error?.message || 'Không thể xác thực với Keycloak';
+                setTimeout(() => {
+                    this.errorMsg = message;
+                });
+                this.notification.error('Đăng nhập thất bại', message);
+            }
+        });
     }
 
     submitForm(): void {
@@ -171,10 +217,10 @@ export class LoginComponent implements OnInit {
             username: this.loginForm.value.username,
             password: this.loginForm.value.password,
             platform: 'web',
-            deviceToken: 'web-device'
+            deviceToken: 'web-device',
+            remember: this.loginForm.value.remember
         };
 
-        // Add OTP if provided
         if (this.requireOtp && this.loginForm.value.otp) {
             loginData.otp = this.loginForm.value.otp;
         }
@@ -187,8 +233,6 @@ export class LoginComponent implements OnInit {
         this.authService.login(loginData).subscribe({
             next: (res) => {
                 this.isLoading = false;
-                console.log('Response nhận được:', res);
-
                 const errorMessage = res.error?.message || res.message || (typeof res === 'string' ? res : '');
 
                 if (errorMessage.includes('REQUIRES_CAPTCHA') || errorMessage.includes('CAPTCHA')) {
@@ -203,11 +247,14 @@ export class LoginComponent implements OnInit {
                         { nzPlacement: 'topRight', nzDuration: 5000 }
                     );
 
-                    this.errorMsg = errorMessage.includes('Invalid') ? 'Mã CAPTCHA không hợp lệ. Vui lòng nhập lại.' : 'Vui lòng xác nhận CAPTCHA.';
-                } else if (errorMessage.includes('OTP is required') ||
+                    this.errorMsg = errorMessage.includes('Invalid')
+                        ? 'Mã CAPTCHA không hợp lệ. Vui lòng nhập lại.'
+                        : 'Vui lòng xác nhận CAPTCHA.';
+                } else if (
+                    errorMessage.includes('OTP is required') ||
                     errorMessage.includes('OTP code') ||
-                    (res.status === 401 && !errorMessage.includes('Bad credentials'))) {
-
+                    (res.status === 401 && !errorMessage.includes('Bad credentials'))
+                ) {
                     this.requireOtp = true;
                     this.loginForm.get('otp')?.setValidators([Validators.required, Validators.pattern(/^\d{6}$/)]);
                     this.loginForm.get('otp')?.updateValueAndValidity();
@@ -217,37 +264,61 @@ export class LoginComponent implements OnInit {
                         'Tài khoản này đã bật 2FA. Vui lòng nhập mã OTP từ Google Authenticator.',
                         { nzPlacement: 'topRight', nzDuration: 5000 }
                     );
-                    this.cdr.detectChanges();
 
                     setTimeout(() => {
-                        if (this.otpInput) {
-                            this.otpInput.nativeElement.focus();
-                        }
+                        this.otpInput?.nativeElement.focus();
                     }, 100);
                 } else if (res.accessToken) {
+                    this.resetChallengeState();
                     this.notification.success('Đăng nhập thành công', 'Chào mừng bạn quay trở lại!');
-                    this.router.navigate(['/']);
+                    this.router.navigateByUrl('/', { replaceUrl: true });
                 } else {
-                    this.errorMsg = errorMessage || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.';
-                    this.notification.error('Đăng nhập thất bại', this.errorMsg);
+                    const fallbackMessage = errorMessage || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.';
+                    setTimeout(() => {
+                        this.errorMsg = fallbackMessage;
+                    });
+                    this.notification.error('Đăng nhập thất bại', fallbackMessage);
 
                     if (this.requireCaptcha) {
                         this.refreshCaptcha();
                     }
                 }
-                this.cdr.detectChanges();
+
             },
             error: (err) => {
                 this.isLoading = false;
                 const errorMessage = err.error?.message || err.message || (typeof err === 'string' ? err : '');
 
-                this.errorMsg = errorMessage || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.';
-                this.notification.error('Đăng nhập thất bại', this.errorMsg);
+                if (
+                    errorMessage.includes('OTP is required') ||
+                    errorMessage.includes('OTP code') ||
+                    errorMessage.includes('2FA')
+                ) {
+                    this.requireOtp = true;
+                    this.loginForm.get('otp')?.setValidators([Validators.required, Validators.pattern(/^\d{6}$/)]);
+                    this.loginForm.get('otp')?.updateValueAndValidity();
+
+                    this.notification.warning(
+                        'Yêu cầu xác thực 2 bước',
+                        'Tài khoản này đã bật 2FA. Vui lòng nhập mã OTP từ Google Authenticator.',
+                        { nzPlacement: 'topRight', nzDuration: 5000 }
+                    );
+
+                    setTimeout(() => {
+                        this.otpInput?.nativeElement.focus();
+                    }, 100);
+                }
+
+                const fallbackMessage = errorMessage || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.';
+                setTimeout(() => {
+                    this.errorMsg = fallbackMessage;
+                });
+                this.notification.error('Đăng nhập thất bại', fallbackMessage);
 
                 if (this.requireCaptcha) {
                     this.refreshCaptcha();
                 }
-                this.cdr.detectChanges();
+
             }
         });
     }

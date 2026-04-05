@@ -72,6 +72,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle unauthorized access and authentication failures
+     *
+     * @param e
+     * @param request
+     * @return errorResponse
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(UNAUTHORIZED)
+    public ErrorResponse handleUnauthorizedException(UnauthorizedException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(UNAUTHORIZED.value());
+        errorResponse.setError(UNAUTHORIZED.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
+
+        return errorResponse;
+    }
+
+    /**
      * Handle exception when internal server error
      *
      * @param e
@@ -79,12 +99,13 @@ public class GlobalExceptionHandler {
      * @return error
      */
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(INTERNAL_SERVER_ERROR)
     public ErrorResponse handleException(Exception e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setStatus(UNAUTHORIZED.value());
-        errorResponse.setError(UNAUTHORIZED.getReasonPhrase());
+        errorResponse.setStatus(INTERNAL_SERVER_ERROR.value());
+        errorResponse.setError(INTERNAL_SERVER_ERROR.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
 
         return errorResponse;

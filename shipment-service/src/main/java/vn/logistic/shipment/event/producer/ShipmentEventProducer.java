@@ -2,6 +2,7 @@ package vn.logistic.shipment.event.producer;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import vn.logistic.shipment.event.dto.DriverAssignedEvent;
 
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class ShipmentEventProducer {
         kafkaTemplate.send("logistics.shipment.status.updated", event);
     }
 
-    public void publishDriverAssignedEvent(Map<String, Object> event) {
+    public void publishDriverAssignedEvent(DriverAssignedEvent event) {
         kafkaTemplate.send("logistics.driver.assigned", event);
     }
 }

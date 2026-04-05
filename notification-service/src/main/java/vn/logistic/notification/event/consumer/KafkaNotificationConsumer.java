@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import vn.logistic.notification.event.dto.DriverAssignedEvent;
 import vn.logistic.notification.service.NotificationService;
 
 import java.util.Map;
@@ -28,7 +29,7 @@ public class KafkaNotificationConsumer {
     }
 
     @KafkaListener(topics = "${spring.kafka.topic.driver-assigned}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consumeDriverAssigned(Map<String, Object> eventData) {
+    public void consumeDriverAssigned(DriverAssignedEvent eventData) {
         log.info("Kafka Consumer - Received driver assigned event");
         notificationService.processDriverAssignedEvent(eventData);
     }

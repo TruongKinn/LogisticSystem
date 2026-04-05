@@ -2,7 +2,6 @@ package vn.agent.service;
 
 import org.springframework.security.core.GrantedAuthority;
 import vn.agent.common.TokenType;
-import vn.agent.grpcserver.VerifyResponse;
 
 import java.util.Collection;
 

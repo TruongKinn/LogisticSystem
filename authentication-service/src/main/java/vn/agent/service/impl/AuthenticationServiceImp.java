@@ -3,11 +3,16 @@ package vn.agent.service.impl;
 import static vn.agent.common.TokenType.REFRESH_TOKEN;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+import java.util.Set;
+import java.util.Comparator;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.samstevens.totp.code.CodeGenerator;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
@@ -18,25 +23,32 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import vn.agent.controller.request.LoginRequest;
 import vn.agent.controller.response.TokenResponse;
+import vn.agent.common.UserStatus;
+import vn.agent.common.UserType;
+import vn.agent.model.User;
+import vn.agent.model.Role;
+import vn.agent.model.UserHasRole;
 import vn.agent.exception.UnauthorizedException;
 import vn.agent.model.RedisToken;
+import vn.agent.repository.RoleRepository;
+import vn.agent.repository.UserHasRoleRepository;
 import vn.agent.repository.TokenRepository;
 import vn.agent.repository.UserRepository;
 import vn.agent.service.AuthenticationService;
 import vn.agent.service.JwtService;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class AuthenticationServiceImp implements AuthenticationService {
 
-    private final AuthenticationManager authenticationManager;
     private final TokenRepository tokenRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserHasRoleRepository userHasRoleRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
     private final org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
     private final vn.agent.service.CaptchaService captchaService;
 
@@ -59,17 +71,14 @@ public class AuthenticationServiceImp implements AuthenticationService {
             captchaService.verifyCaptcha(request.getCaptchaToken(), request.getCaptchaAnswer());
         }
 
-        var user = userRepository.findByUsername(username);
+        User user = resolveUserForBearerLogin(username);
 
         if (user == null) {
             handleLoginFail(loginFailKey, fails);
             throw new vn.agent.exception.UnauthorizedException("Bad credentials");
         }
 
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username,
-                    request.getPassword(), user.getAuthorities()));
-        } catch (org.springframework.security.core.AuthenticationException ex) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             handleLoginFail(loginFailKey, fails);
             throw new vn.agent.exception.UnauthorizedException("Bad credentials");
         }
@@ -88,20 +97,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
             CodeGenerator codeGenerator = new DefaultCodeGenerator();
             DefaultCodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
             verifier.setAllowedTimePeriodDiscrepancy(1); // Allow 1 time period (30s) drift
-
             String secret = user.getSecret().trim().toUpperCase();
-
-            // Diagnostic logs
-            try {
-                long currentBucket = timeProvider.getTime() / 30;
-                String expectedCode = codeGenerator.generate(secret, currentBucket);
-                log.info("DEBUG OTP: Secret length: {}", secret.length());
-                log.info("DEBUG OTP: Expected code for bucket {}: {}", currentBucket, expectedCode);
-                log.info("DEBUG OTP: Received code: {}", request.getOtp());
-            } catch (Exception e) {
-                log.error("DEBUG OTP: Error generating diagnostic log", e);
-            }
-
             boolean isValidOtp = verifier.isValidCode(secret, request.getOtp());
             if (!isValidOtp) {
                 throw new UnauthorizedException("Invalid OTP code");
@@ -141,6 +137,26 @@ public class AuthenticationServiceImp implements AuthenticationService {
                 .build();
     }
 
+    private User resolveUserForBearerLogin(String username) {
+        List<User> candidates = userRepository.findAllByUsernameIgnoreCase(username);
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+
+        return candidates.stream()
+                .filter(user -> Boolean.TRUE.equals(user.isTwoFactorEnabled()))
+                .findFirst()
+                .or(() -> candidates.stream()
+                        .filter(user -> StringUtils.equalsIgnoreCase(user.getUsername(), username))
+                        .findFirst())
+                .or(() -> candidates.stream()
+                        .filter(user -> user.getStatus() == UserStatus.ACTIVE)
+                        .findFirst())
+                .or(() -> candidates.stream()
+                        .min(Comparator.comparing(User::getId)))
+                .orElse(null);
+    }
+
     @Override
     public TokenResponse createRefreshToken(HttpServletRequest request) {
         final String refreshToken = request.getHeader("x-refresh-token");
@@ -156,7 +172,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
             throw new UnauthorizedException(e.getMessage());
         }
 
-        var user = userRepository.findByUsername(userName);
+        User user = resolveUserForBearerLogin(userName);
         if (user == null) {
             throw new UnauthorizedException("Not allow access with this token");
         }
@@ -176,6 +192,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public TokenResponse exchangeKeycloakToken(vn.agent.controller.request.KeycloakExchangeRequest request) {
         // Validate Keycloak token by calling userinfo endpoint
         String keycloakUserInfoUrl = keycloakUrl + "/realms/micro-services/protocol/openid-connect/userinfo";
@@ -185,7 +202,6 @@ public class AuthenticationServiceImp implements AuthenticationService {
 
         java.util.Map<String, Object> userInfo;
         try {
-            log.info("Validating Keycloak token at: {}", keycloakUserInfoUrl);
             userInfo = webClient.get()
                     .uri(keycloakUserInfoUrl)
                     .header("Authorization", "Bearer " + request.getKeycloakToken())
@@ -195,7 +211,6 @@ public class AuthenticationServiceImp implements AuthenticationService {
                             })
                     .block();
         } catch (Exception e) {
-            log.error("Failed to validate Keycloak token at {}: {}", keycloakUserInfoUrl, e.getMessage());
             throw new UnauthorizedException("Invalid Keycloak token: " + e.getMessage());
         }
 
@@ -213,11 +228,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
             throw new UnauthorizedException("Cannot extract username from Keycloak token");
         }
 
-        // Find user in local database
-        var user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UnauthorizedException("User not found in system: " + username);
-        }
+        User user = resolveOrCreateLocalUser(userInfo, username);
 
         // Generate internal tokens
         String accessToken = jwtService.generateToken(user.getId(), user.getUsername(), user.getFirstName(),
@@ -246,6 +257,112 @@ public class AuthenticationServiceImp implements AuthenticationService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .build();
+    }
+
+    private User resolveOrCreateLocalUser(Map<String, Object> userInfo, String username) {
+        String email = stringValue(userInfo.get("email"));
+        String firstName = stringValue(userInfo.get("given_name"));
+        String lastName = stringValue(userInfo.get("family_name"));
+        String preferredUsername = StringUtils.defaultIfBlank(username, email);
+
+        List<User> candidates = userRepository.findAllByUsernameIgnoreCaseOrEmailIgnoreCase(preferredUsername, email);
+        if ((candidates == null || candidates.isEmpty()) && StringUtils.isNotBlank(email)) {
+            candidates = userRepository.findAllByEmailIgnoreCase(email);
+        }
+
+        User user = selectBestUserCandidate(candidates, preferredUsername, email);
+
+        if (user != null) {
+            boolean changed = false;
+            if (StringUtils.isBlank(user.getEmail()) && StringUtils.isNotBlank(email)) {
+                user.setEmail(email);
+                changed = true;
+            }
+            if (StringUtils.isBlank(user.getFirstName()) && StringUtils.isNotBlank(firstName)) {
+                user.setFirstName(firstName);
+                changed = true;
+            }
+            if (StringUtils.isBlank(user.getLastName()) && StringUtils.isNotBlank(lastName)) {
+                user.setLastName(lastName);
+                changed = true;
+            }
+            if (user.getStatus() == null) {
+                user.setStatus(UserStatus.ACTIVE);
+                changed = true;
+            }
+            if (user.getType() == null) {
+                user.setType(UserType.USER);
+                changed = true;
+            }
+            if (changed) {
+                user = userRepository.save(user);
+            }
+            ensureDefaultRole(user);
+            return user;
+        }
+
+        User newUser = User.builder()
+                .username(preferredUsername)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .type(UserType.USER)
+                .status(UserStatus.ACTIVE)
+                .isTwoFactorEnabled(false)
+                .roles(new HashSet<>())
+                .build();
+
+        user = userRepository.save(newUser);
+        ensureDefaultRole(user);
+        return user;
+    }
+
+    private User selectBestUserCandidate(List<User> candidates, String username, String email) {
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+
+        return candidates.stream()
+                .filter(user -> StringUtils.equalsIgnoreCase(user.getUsername(), username))
+                .findFirst()
+                .or(() -> candidates.stream()
+                        .filter(user -> StringUtils.isNotBlank(email)
+                                && StringUtils.equalsIgnoreCase(user.getEmail(), email))
+                        .findFirst())
+                .or(() -> candidates.stream()
+                        .filter(user -> user.getStatus() == UserStatus.ACTIVE)
+                        .findFirst())
+                .or(() -> candidates.stream()
+                        .min(Comparator.comparing(User::getId)))
+                .orElse(null);
+    }
+
+    private void ensureDefaultRole(User user) {
+        Role defaultRole = roleRepository.findByName("USER");
+        if (defaultRole == null) {
+            defaultRole = new Role();
+            defaultRole.setName("USER");
+            defaultRole = roleRepository.save(defaultRole);
+        }
+
+        Set<UserHasRole> existingRoles = user.getRoles();
+        boolean alreadyHasUserRole = existingRoles != null && existingRoles.stream()
+                .anyMatch(userHasRole -> userHasRole.getRole() != null
+                        && "USER".equalsIgnoreCase(userHasRole.getRole().getName()));
+        if (alreadyHasUserRole) {
+            return;
+        }
+
+        UserHasRole userHasRole = new UserHasRole();
+        userHasRole.setUser(user);
+        userHasRole.setRole(defaultRole);
+        userHasRoleRepository.save(userHasRole);
+        user.getRoles().add(userHasRole);
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
     }
 
     private void handleLoginFail(String loginFailKey, int currentFails) {

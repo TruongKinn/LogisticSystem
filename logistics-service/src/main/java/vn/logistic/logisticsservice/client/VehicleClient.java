@@ -18,4 +18,7 @@ public interface VehicleClient {
 
     @PutMapping("/vehicle/{id}/assign-driver/{driverId}")
     VehicleDto assignDriver(@PathVariable("id") Long id, @PathVariable("driverId") Long driverId);
+
+    @PutMapping("/vehicle/{id}/unassign-driver")
+    VehicleDto unassignDriver(@PathVariable("id") Long id);
 }
